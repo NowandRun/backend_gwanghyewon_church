@@ -4,7 +4,6 @@ import { GqlExecutionContext } from '@nestjs/graphql';
 import { AllowedRoles } from './role.decorator';
 import { JwtService } from 'src/jwt/jwt.service';
 import { UsersService } from 'src/users/users.service';
-import { UserRole } from 'src/users/entities/user.entity';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -22,10 +21,9 @@ export class AuthGuard implements CanActivate {
       return true;
     }
     const gqlContext = GqlExecutionContext.create(context).getContext();
+    const accessToken = gqlContext.req.headers['access-jwt'];
 
-    const accessToken = gqlContext.accessToken;
-
-    const refreshToken = gqlContext.refreshToken;
+    const refreshToken = gqlContext.req.headers['refresh-jwt'];
     if (accessToken && refreshToken) {
       try {
         const accessTokenDecoded = this.jwtService.accessTokenVerify(
@@ -78,15 +76,11 @@ export class AuthGuard implements CanActivate {
             const updateAccessToken = this.jwtService.signAccessToken(user.id);
             const updateRefreshToken = this.jwtService.signRefreshToken();
 
+            gqlContext.res.headers['access-jwt'] = updateAccessToken;
+            gqlContext.res.headers['refresh-jwt'] = updateRefreshToken;
+
             gqlContext.accessToken = updateAccessToken; // updateAccessToken은 새로운 accessToken 값
             gqlContext.refreshToken = updateRefreshToken;
-
-            /* const req = context.switchToHttp().getRequest();
-
-            req.headers['refresh-jwt'] = updateRefreshToken;
-            req.headers['access-jwt'] = updateAccessToken; */
-
-            // req.headers token update
 
             const newUser = await this.userService.updateRefreshToken(
               user,

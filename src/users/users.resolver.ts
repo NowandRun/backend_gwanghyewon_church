@@ -25,13 +25,15 @@ export class UsersResolver {
   }
 
   @Mutation((returns) => LoginOutput)
-  async login(@Args('input') loginInput: LoginInput): Promise<LoginOutput> {
+  login(@Args('input') loginInput: LoginInput): Promise<LoginOutput> {
     return this.userService.login(loginInput);
   }
 
   @Query((returns) => User)
   @Role(['Any'])
-  me(@AuthUser() authUser: User) {
+  me(@AuthUser() authUser: User, @Context() context) {
+    const { req } = context;
+    console.log(req);
     return authUser;
   }
 
