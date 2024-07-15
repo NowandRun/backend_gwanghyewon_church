@@ -1,5 +1,5 @@
 import { InjectRepository } from '@nestjs/typeorm';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Req, Res } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import {
   CreateAccountInput,
@@ -11,6 +11,7 @@ import { JwtService } from 'src/jwt/jwt.service';
 import { UserProfileOutput } from './dtos/user-profile.dto';
 import { LogoutOutput } from './dtos/logout.dto';
 import { Context } from '@nestjs/graphql';
+import { CookieOptions } from 'express';
 
 @Injectable()
 export class UsersService {
@@ -45,7 +46,7 @@ export class UsersService {
     }
   }
 
-  async login({ userId, password }: LoginInput): Promise<LoginOutput> {
+  async login({ userId, password }: LoginInput, req): Promise<LoginOutput> {
     try {
       const user = await this.users.findOne({
         where: { userId },
@@ -67,7 +68,19 @@ export class UsersService {
       await this.users.update(user.id, {
         currentRefreshToken: refreshToken,
       });
+      const accessTokenOptions: CookieOptions = {
+        httpOnly: true,
+        sameSite: 'none', // Client가 Server와 다른 IP(다른 도메인) 이더라도 동작하게 한다.
+        secure: true, // sameSite:'none'을 할 경우 secure:true로 설정해준다.
+      };
 
+      const refreshTokenOptions: CookieOptions = {
+        httpOnly: true,
+        sameSite: 'none', // Client가 Server와 다른 IP(다른 도메인) 이더라도 동작하게 한다.
+        secure: true, // sameSite:'none'을 할 경우 secure:true로 설정해준다.
+      };
+      req.res.cookie('accessToken', accessToken, accessTokenOptions);
+      req.res.cookie('refreshToken', refreshToken, refreshTokenOptions);
       return {
         ok: true,
         accessToken,

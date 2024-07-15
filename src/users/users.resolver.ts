@@ -12,6 +12,7 @@ import { UserProfileInput, UserProfileOutput } from './dtos/user-profile.dto';
 import { Role } from 'src/auth/role.decorator';
 import { AuthUser } from 'src/auth/auth-user.decorator';
 import { LogoutOutput } from './dtos/logout.dto';
+import { Res } from '@nestjs/common';
 
 @Resolver((of) => User)
 export class UsersResolver {
@@ -25,15 +26,16 @@ export class UsersResolver {
   }
 
   @Mutation((returns) => LoginOutput)
-  login(@Args('input') loginInput: LoginInput): Promise<LoginOutput> {
-    return this.userService.login(loginInput);
+  login(
+    @Args('input') loginInput: LoginInput,
+    @Res({ passthrough: true }) req: Request,
+  ): Promise<LoginOutput> {
+    return this.userService.login(loginInput, req);
   }
 
   @Query((returns) => User)
   @Role(['Any'])
   me(@AuthUser() authUser: User, @Context() context) {
-    const { req } = context;
-    console.log(req);
     return authUser;
   }
 

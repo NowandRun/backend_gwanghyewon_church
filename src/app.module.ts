@@ -61,13 +61,12 @@ import { JwtMiddleware } from './jwt/jwt.middleware';
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       autoSchemaFile: true,
-      playground: {
-        settings: {
-          'request.credentials': 'include', // Otherwise cookies won't be sent
-        },
-      },
-      context: ({ req, res }) => {
-        return { req, res };
+      context: ({ req, res, connection }) => {
+        return {
+          accessToken: req.headers['access-jwt'],
+          refreshToken: req.headers['refresh-jwt'],
+          res,
+        };
       },
     }),
     JwtModule.forRoot({

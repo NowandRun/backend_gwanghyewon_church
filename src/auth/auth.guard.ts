@@ -4,7 +4,8 @@ import { GqlExecutionContext } from '@nestjs/graphql';
 import { AllowedRoles } from './role.decorator';
 import { JwtService } from 'src/jwt/jwt.service';
 import { UsersService } from 'src/users/users.service';
-
+import * as cookieParser from 'cookie-parser';
+import { CookieOptions } from 'express';
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
@@ -21,22 +22,27 @@ export class AuthGuard implements CanActivate {
       return true;
     }
     const gqlContext = GqlExecutionContext.create(context).getContext();
-    const accessToken = gqlContext.req.headers['access-jwt'];
 
-    const refreshToken = gqlContext.req.headers['refresh-jwt'];
+    const req = gqlContext.req;
+    const res = gqlContext.res;
+
+    cookieParser()(req, res, () => {});
+    let accessToken = req.cookies['accessToken'];
+    /* const accessToken = gqlContext.accessToken; */
+    let refreshToken = req.cookies['refreshToken'];
+
     if (accessToken && refreshToken) {
       try {
         const accessTokenDecoded = this.jwtService.accessTokenVerify(
           accessToken.toString(),
         );
-
         const checkRefreshToken = await this.userService.checkRefreshToken(
           accessTokenDecoded['id'],
         );
         /* refreshtoken이 db에 없을 시 header의 accessToken과 refreshToken을 지움 */
         if (!checkRefreshToken) {
-          delete gqlContext.accessToken;
-          delete gqlContext.refreshToken;
+          req.res.clearCookie('accessToken');
+          req.res.clearCookie('refreshToken');
         }
 
         if (
@@ -59,7 +65,7 @@ export class AuthGuard implements CanActivate {
         }
       } catch (error) {
         try {
-          delete gqlContext.accessToken;
+          req.res.clearCookie('accessToken');
 
           const refreshTokenDecoded = this.jwtService.refreshTokenVerify(
             refreshToken.toString(),
@@ -76,15 +82,31 @@ export class AuthGuard implements CanActivate {
             const updateAccessToken = this.jwtService.signAccessToken(user.id);
             const updateRefreshToken = this.jwtService.signRefreshToken();
 
-            gqlContext.res.headers['access-jwt'] = updateAccessToken;
-            gqlContext.res.headers['refresh-jwt'] = updateRefreshToken;
+            const accessTokenOptions: CookieOptions = {
+              httpOnly: true,
+              sameSite: 'none', // Client가 Server와 다른 IP(다른 도메인) 이더라도 동작하게 한다.
+              secure: true, // sameSite:'none'을 할 경우 secure:true로 설정해준다.
+            };
 
-            gqlContext.accessToken = updateAccessToken; // updateAccessToken은 새로운 accessToken 값
-            gqlContext.refreshToken = updateRefreshToken;
+            const refreshTokenOptions: CookieOptions = {
+              httpOnly: true,
+              sameSite: 'none', // Client가 Server와 다른 IP(다른 도메인) 이더라도 동작하게 한다.
+              secure: true, // sameSite:'none'을 할 경우 secure:true로 설정해준다.
+            };
 
+            req.res.cookie(
+              'accessToken',
+              updateAccessToken,
+              accessTokenOptions,
+            );
+            req.res.cookie(
+              'refreshToken',
+              updateRefreshToken,
+              refreshTokenOptions,
+            );
             const newUser = await this.userService.updateRefreshToken(
               user,
-              gqlContext.refreshToken,
+              updateRefreshToken,
             );
 
             if (!newUser) {
