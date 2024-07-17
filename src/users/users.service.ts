@@ -113,7 +113,12 @@ export class UsersService {
   }
 
   async updateRefreshToken(user: User, refreshToken: string): Promise<User> {
-    const data = await this.users.save({ ...user, refreshToken: refreshToken });
+    await this.users.update(user.id, {
+      currentRefreshToken: refreshToken,
+    });
+
+    const data = await this.users.findOne({ where: { id: user.id } });
+
     return data;
   }
 

@@ -1,11 +1,11 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { GqlExecutionContext } from '@nestjs/graphql';
-import { AllowedRoles } from './role.decorator';
 import { JwtService } from 'src/jwt/jwt.service';
 import { UsersService } from 'src/users/users.service';
-import * as cookieParser from 'cookie-parser';
 import { CookieOptions } from 'express';
+import { AllowedRoles } from './role.decorator';
+
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
@@ -13,118 +13,103 @@ export class AuthGuard implements CanActivate {
     private readonly jwtService: JwtService,
     private readonly userService: UsersService,
   ) {}
-  async canActivate(context: ExecutionContext) {
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const roles = this.reflector.get<AllowedRoles>(
       'roles',
       context.getHandler(),
     );
+
     if (!roles) {
       return true;
     }
+
     const gqlContext = GqlExecutionContext.create(context).getContext();
+    const { req, res } = gqlContext;
 
-    const req = gqlContext.req;
-    const res = gqlContext.res;
-
-    cookieParser()(req, res, () => {});
+    console.log(req.cookies);
     let accessToken = req.cookies['accessToken'];
-    /* const accessToken = gqlContext.accessToken; */
     let refreshToken = req.cookies['refreshToken'];
-
     if (accessToken && refreshToken) {
       try {
         const accessTokenDecoded = this.jwtService.accessTokenVerify(
           accessToken.toString(),
         );
+
+        if (!accessTokenDecoded || !accessTokenDecoded.hasOwnProperty('id')) {
+          throw new Error('Invalid access token');
+        }
+
         const checkRefreshToken = await this.userService.checkRefreshToken(
           accessTokenDecoded['id'],
         );
-        /* refreshtoken이 db에 없을 시 header의 accessToken과 refreshToken을 지움 */
+
         if (!checkRefreshToken) {
-          req.res.clearCookie('accessToken');
-          req.res.clearCookie('refreshToken');
+          res.clearCookie('accessToken');
+          res.clearCookie('refreshToken');
+          return false;
         }
 
         if (
           typeof accessTokenDecoded === 'object' &&
           accessTokenDecoded.hasOwnProperty('id')
         ) {
-          const { user } = await this.userService.findById(
+          const user = await this.userService.findById(
             accessTokenDecoded['id'],
           );
-
           if (!user) {
             return false;
           }
 
           gqlContext['user'] = user;
-          if (roles.includes('Any')) {
-            return true;
-          }
-          return roles.includes(user.role);
+
+          return roles.includes('Any') || roles.includes(user.user.role);
         }
       } catch (error) {
-        try {
-          req.res.clearCookie('accessToken');
-
+        {
           const refreshTokenDecoded = this.jwtService.refreshTokenVerify(
             refreshToken.toString(),
           );
 
+          if (!refreshTokenDecoded || typeof refreshTokenDecoded !== 'object') {
+            throw new Error('Invalid refresh token');
+          }
+
           const user = await this.userService.findByRefreshToken(
             refreshToken + '',
           );
-
+          console.log(user);
           if (!user) {
             return false;
           }
+
           if (typeof refreshTokenDecoded === 'object') {
             const updateAccessToken = this.jwtService.signAccessToken(user.id);
             const updateRefreshToken = this.jwtService.signRefreshToken();
-
             const accessTokenOptions: CookieOptions = {
               httpOnly: true,
-              sameSite: 'none', // Client가 Server와 다른 IP(다른 도메인) 이더라도 동작하게 한다.
-              secure: true, // sameSite:'none'을 할 경우 secure:true로 설정해준다.
+              sameSite: 'none',
+              secure: true,
             };
 
             const refreshTokenOptions: CookieOptions = {
               httpOnly: true,
-              sameSite: 'none', // Client가 Server와 다른 IP(다른 도메인) 이더라도 동작하게 한다.
-              secure: true, // sameSite:'none'을 할 경우 secure:true로 설정해준다.
+              sameSite: 'none',
+              secure: true,
             };
-
-            req.res.cookie(
-              'accessToken',
-              updateAccessToken,
-              accessTokenOptions,
-            );
-            req.res.cookie(
-              'refreshToken',
-              updateRefreshToken,
-              refreshTokenOptions,
-            );
+            res.cookie('accessToken', updateAccessToken, accessTokenOptions);
+            res.cookie('refreshToken', updateRefreshToken, refreshTokenOptions);
             const newUser = await this.userService.updateRefreshToken(
               user,
-              updateRefreshToken,
+              updateRefreshToken + '',
             );
-
             if (!newUser) {
-              return false;
+              throw new Error('Failed to update refresh token');
             }
-            gqlContext['user'] = newUser;
-
-            if (roles.includes('Any')) {
-              return true;
-            }
-            return roles.includes(user.role);
+            req['user'] = newUser;
           }
-        } catch (e) {
-          return false;
         }
       }
-    } else {
-      return false;
     }
   }
 }

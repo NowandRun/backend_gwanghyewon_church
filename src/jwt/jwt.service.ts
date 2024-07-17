@@ -33,7 +33,8 @@ export class JwtService {
 
       return accessPayload;
     } catch (error) {
-      throw new Error('Token verification failed');
+      /* throw new Error('Token verification failed'); */
+      return;
     }
   }
 

@@ -10,14 +10,13 @@ import {
 } from './dtos/create-notice.dto';
 import { NoticesInput, NoticesOutput } from './dtos/notices.dto';
 import { NoticeInput, NoticeOutput } from './dtos/notice.dto';
-import { UsersService } from 'src/users/users.service';
 
 @Resolver((of) => Notice)
 export class NoticeResolver {
   constructor(private readonly noticeService: NoticeService) {}
 
   @Mutation((returns) => CreateNoticeOutput)
-  /* @Role(['Manager']) */
+  @Role(['Manager'])
   async createNotice(
     @AuthUser() authUser: User,
     @Args('input') createNoticeInput: CreateNoticeInput,

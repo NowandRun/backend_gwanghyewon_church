@@ -1,11 +1,5 @@
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
-import {
-  ConfigurableModuleBuilder,
-  MiddlewareConsumer,
-  Module,
-  NestModule,
-  RequestMethod,
-} from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
 import { UsersModule } from './users/users.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -19,8 +13,6 @@ import { Qna } from './qna/entities/qna.entity';
 import { QnaComment } from './qna/entities/qna-comment.entity';
 import { Notice } from './notice/entities/notice.entity';
 import { NoticeModule } from './notice/notices.module';
-import * as cookieParser from 'cookie-parser';
-import { JwtMiddleware } from './jwt/jwt.middleware';
 
 @Module({
   imports: [
@@ -63,8 +55,7 @@ import { JwtMiddleware } from './jwt/jwt.middleware';
       autoSchemaFile: true,
       context: ({ req, res, connection }) => {
         return {
-          accessToken: req.headers['access-jwt'],
-          refreshToken: req.headers['refresh-jwt'],
+          req,
           res,
         };
       },
