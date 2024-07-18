@@ -1,5 +1,10 @@
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
-import { Module } from '@nestjs/common';
+import {
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  RequestMethod,
+} from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
 import { UsersModule } from './users/users.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -13,6 +18,7 @@ import { Qna } from './qna/entities/qna.entity';
 import { QnaComment } from './qna/entities/qna-comment.entity';
 import { Notice } from './notice/entities/notice.entity';
 import { NoticeModule } from './notice/notices.module';
+import { JwtMiddleware } from './jwt/jwt.middleware';
 
 @Module({
   imports: [
@@ -74,4 +80,10 @@ import { NoticeModule } from './notice/notices.module';
   controllers: [],
   providers: [],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(JwtMiddleware)
+      .forRoutes({ path: '/graphql', method: RequestMethod.ALL });
+  }
+}

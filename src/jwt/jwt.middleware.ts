@@ -14,8 +14,8 @@ export class JwtMiddleware implements NestMiddleware {
   async use(req: Request, res: Response, next: NextFunction) {
     if ('accessToken' in req.cookies && 'refreshToken' in req.cookies) {
       let accessToken = req.cookies['accessToken'];
-
       let refreshToken = req.cookies['refreshToken'];
+
       try {
         const accessTokenDecoded = await this.jwtService.accessTokenVerify(
           accessToken.toString(),
@@ -44,70 +44,53 @@ export class JwtMiddleware implements NestMiddleware {
           if (!user) {
             return next(); // 유저를 찾을 수 없는 경우 미들웨어 종료
           }
-
-          req['user'] = user;
+          res.locals.user = user;
         }
       } catch (error) {
         try {
-          try {
-            const refreshTokenDecoded = this.jwtService.refreshTokenVerify(
-              refreshToken.toString(),
-            );
+          const refreshTokenDecoded = await this.jwtService.refreshTokenVerify(
+            refreshToken.toString(),
+          );
 
-            if (
-              !refreshTokenDecoded ||
-              typeof refreshTokenDecoded !== 'object'
-            ) {
-              throw new Error('Invalid refresh token');
-            }
-
-            const user = await this.userService.findByRefreshToken(
-              refreshToken + '',
-            );
-
-            if (!user) {
-              return next(); // 유저를 찾을 수 없는 경우 미들웨어 종료
-            }
-            if (typeof refreshTokenDecoded === 'object') {
-              const updateAccessToken = this.jwtService.signAccessToken(
-                user.id,
-              );
-              const updateRefreshToken = this.jwtService.signRefreshToken();
-              const accessTokenOptions: CookieOptions = {
-                httpOnly: true,
-                sameSite: 'none',
-                secure: true,
-              };
-
-              const refreshTokenOptions: CookieOptions = {
-                httpOnly: true,
-                sameSite: 'none',
-                secure: true,
-              };
-
-              res.cookie('accessToken', updateAccessToken, accessTokenOptions);
-              res.cookie(
-                'refreshToken',
-                updateRefreshToken,
-                refreshTokenOptions,
-              );
-
-              const newUser = await this.userService.updateRefreshToken(
-                user,
-                updateRefreshToken + '',
-              );
-
-              if (!newUser) {
-                throw new Error('Failed to update refresh token');
-              }
-              req['user'] = newUser;
-            }
-          } catch (e) {
-            console.error('Refresh token verification failed', error);
+          if (!refreshTokenDecoded || typeof refreshTokenDecoded !== 'object') {
+            throw new Error('Invalid refresh token');
           }
-        } catch (error) {
-          console.log(error);
-        }
+
+          const user = await this.userService.findByRefreshToken(
+            refreshToken + '',
+          );
+
+          if (!user) {
+            return next(); // 유저를 찾을 수 없는 경우 미들웨어 종료
+          }
+          if (typeof refreshTokenDecoded === 'object') {
+            const updateAccessToken = this.jwtService.signAccessToken(user.id);
+            const updateRefreshToken = this.jwtService.signRefreshToken();
+            const accessTokenOptions: CookieOptions = {
+              httpOnly: true,
+              sameSite: 'none',
+              secure: true,
+            };
+
+            const refreshTokenOptions: CookieOptions = {
+              httpOnly: true,
+              sameSite: 'none',
+              secure: true,
+            };
+
+            res.cookie('accessToken', updateAccessToken, accessTokenOptions);
+            res.cookie('refreshToken', updateRefreshToken, refreshTokenOptions);
+            const newUser = await this.userService.updateRefreshToken(
+              user,
+              updateRefreshToken + '',
+            );
+
+            if (!newUser) {
+              throw new Error('Failed to update refresh token');
+            }
+            res.locals.user = newUser;
+          }
+        } catch (error) {}
       }
     }
     next();

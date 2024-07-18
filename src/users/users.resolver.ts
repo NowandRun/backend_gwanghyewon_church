@@ -34,7 +34,7 @@ export class UsersResolver {
   }
 
   @Query((returns) => User)
-  @Role(['Any'])
+  @Role(['Manager'])
   me(@AuthUser() authUser: User) {
     return authUser;
   }

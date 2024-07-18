@@ -25,17 +25,12 @@ export class JwtService {
 
   /// 토큰 검증
   accessTokenVerify(accessToken: string): any {
-    try {
-      const accessPayload = jwt.verify(
-        accessToken,
-        this.options.accessTokenPrivateKey,
-      );
+    const accessPayload = jwt.verify(
+      accessToken,
+      this.options.accessTokenPrivateKey,
+    );
 
-      return accessPayload;
-    } catch (error) {
-      /* throw new Error('Token verification failed'); */
-      return;
-    }
+    return accessPayload;
   }
 
   refreshTokenVerify(refreshToken: string): any {
