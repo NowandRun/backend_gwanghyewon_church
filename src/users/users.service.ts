@@ -9,15 +9,16 @@ import { LoginInput, LoginOutput } from './dtos/login.dto';
 import { User } from './entities/user.entity';
 import { JwtService } from 'src/jwt/jwt.service';
 import { UserProfileOutput } from './dtos/user-profile.dto';
-import { LogoutOutput } from './dtos/logout.dto';
-import { Context } from '@nestjs/graphql';
+import { LogoutInput, LogoutOutput } from './dtos/logout.dto';
 import { CookieOptions } from 'express';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User) private readonly users: Repository<User>,
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
 
   async createAccount({
@@ -69,18 +70,20 @@ export class UsersService {
         currentRefreshToken: refreshToken,
       });
       const accessTokenOptions: CookieOptions = {
-        httpOnly: true,
-        sameSite: 'none', // Client가 Server와 다른 IP(다른 도메인) 이더라도 동작하게 한다.
-        secure: true, // sameSite:'none'을 할 경우 secure:true로 설정해준다.
+        httpOnly: this.configService.get<boolean>('ACCESSTOKEN_HTTP_ONLY'),
+        sameSite: this.configService.get('ACCESSTOKEN_SAMESITE'),
+        secure: this.configService.get<boolean>('ACCESSTOKEN_SECURE'),
+        maxAge: this.configService.get<number>('ACCESSTOKEN_MAX_AGE'),
       };
 
       const refreshTokenOptions: CookieOptions = {
-        httpOnly: true,
-        sameSite: 'none', // Client가 Server와 다른 IP(다른 도메인) 이더라도 동작하게 한다.
-        secure: true, // sameSite:'none'을 할 경우 secure:true로 설정해준다.
+        httpOnly: this.configService.get<boolean>('REFRESHTOKEN_HTTP_ONLY'),
+        sameSite: this.configService.get('REFRESHTOKEN_SAMESITE'),
+        secure: this.configService.get<boolean>('REFRESHTOKEN_SECURE'),
+        maxAge: this.configService.get<number>('REFRESHTOKEN_MAX_AGE'),
       };
-      req.res.cookie('accessToken', accessToken, accessTokenOptions);
-      req.res.cookie('refreshToken', refreshToken, refreshTokenOptions);
+      req.res.cookie('nda', accessToken, accessTokenOptions);
+      req.res.cookie('ndr', refreshToken, refreshTokenOptions);
       return {
         ok: true,
         accessToken,
@@ -130,11 +133,57 @@ export class UsersService {
     });
   }
 
-  async logout({ id }: User): Promise<LogoutOutput> {
+  async logout(
+    { id }: User,
+    logoutInput: LogoutInput,
+    req,
+  ): Promise<LogoutOutput> {
+    try {
+      if (id === logoutInput.id) {
+        return {
+          ok: false,
+          error: '해당 사용자는 logout을 할 수 없습니다.',
+        };
+      }
+
+      await this.users.update(logoutInput.id, {
+        currentRefreshToken: null,
+      });
+
+      const accessTokenOptions: CookieOptions = {
+        httpOnly: this.configService.get<boolean>('ACCESSTOKEN_HTTP_ONLY'),
+        sameSite: this.configService.get('ACCESSTOKEN_SAMESITE'),
+        secure: this.configService.get<boolean>('ACCESSTOKEN_SECURE'),
+        maxAge: this.configService.get<number>('ACCESSTOKEN_LOGOUT_MAX_AGE'),
+      };
+
+      const refreshTokenOptions: CookieOptions = {
+        httpOnly: this.configService.get<boolean>('REFRESHTOKEN_HTTP_ONLY'),
+        sameSite: this.configService.get('REFRESHTOKEN_SAMESITE'),
+        secure: this.configService.get<boolean>('REFRESHTOKEN_SECURE'),
+        maxAge: this.configService.get<number>('REFRESHTOKEN_LOGOUT_MAX_AGE'),
+      };
+
+      req.res.cookie('nda', '', accessTokenOptions);
+      req.res.cookie('ndr', '', refreshTokenOptions);
+
+      return {
+        ok: true,
+      };
+    } catch {
+      return {
+        ok: false,
+        error: 'Logout is fail',
+      };
+    }
+  }
+
+  async logoutMiddleware(id: number): Promise<LogoutOutput> {
     try {
       await this.users.update(id, {
         currentRefreshToken: null,
       });
+
       return {
         ok: true,
       };

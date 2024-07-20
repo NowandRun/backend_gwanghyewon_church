@@ -2,20 +2,45 @@ import { Injectable, NestMiddleware } from '@nestjs/common';
 import { CookieOptions, NextFunction, Request, Response } from 'express';
 import { JwtService } from './jwt.service';
 import { UsersService } from 'src/users/users.service';
-import { CONTEXT, Context, GqlExecutionContext } from '@nestjs/graphql';
-import * as cookieParser from 'cookie-parser';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class JwtMiddleware implements NestMiddleware {
   constructor(
     private readonly jwtService: JwtService,
     private readonly userService: UsersService,
+    private readonly configService: ConfigService,
   ) {}
   async use(req: Request, res: Response, next: NextFunction) {
-    if ('accessToken' in req.cookies && 'refreshToken' in req.cookies) {
-      let accessToken = req.cookies['accessToken'];
-      let refreshToken = req.cookies['refreshToken'];
+    let accessToken = req.cookies['nda'];
 
+    let refreshToken = req.cookies['ndr'];
+    if (accessToken && !refreshToken) {
+      const accessTokenDecoded = this.jwtService.accessTokenVerify(
+        accessToken.toString(),
+      );
+      await this.userService.logoutMiddleware(accessTokenDecoded['id']);
+      res.locals.user = '';
+      res.clearCookie('nda');
+      return next();
+    }
+
+    if (!refreshToken) {
+      res.clearCookie('nda');
+      res.clearCookie('ndr');
+      return next();
+    }
+
+    const refreshTokenDecoded = await this.jwtService.refreshTokenVerify(
+      refreshToken.toString(),
+    );
+    if (!refreshTokenDecoded || typeof refreshTokenDecoded !== 'object') {
+      res.clearCookie('nda');
+      res.clearCookie('ndr');
+      return next();
+    }
+
+    if ('nda' in req.cookies && 'ndr' in req.cookies) {
       try {
         const accessTokenDecoded = await this.jwtService.accessTokenVerify(
           accessToken.toString(),
@@ -24,71 +49,78 @@ export class JwtMiddleware implements NestMiddleware {
           throw new Error('Invalid access token');
         }
 
+        if (!refreshToken) {
+          await this.userService.logoutMiddleware(accessTokenDecoded['id']);
+          res.clearCookie('nda');
+          return next();
+        }
+
         const checkRefreshToken = await this.userService.checkRefreshToken(
           accessTokenDecoded['id'],
         );
 
         if (!checkRefreshToken) {
-          res.clearCookie('accessToken');
-          res.clearCookie('refreshToken');
+          res.clearCookie('nda');
+          res.clearCookie('ndr');
+          return next();
         }
 
         if (
           typeof accessTokenDecoded === 'object' &&
           accessTokenDecoded.hasOwnProperty('id')
         ) {
-          const user = await this.userService.findById(
+          const findUser = await this.userService.findById(
             accessTokenDecoded['id'],
           );
 
-          if (!user) {
+          if (!findUser) {
             return next(); // 유저를 찾을 수 없는 경우 미들웨어 종료
           }
-          res.locals.user = user;
+          res.locals.user = findUser;
+          return next();
         }
       } catch (error) {
         try {
-          const refreshTokenDecoded = await this.jwtService.refreshTokenVerify(
-            refreshToken.toString(),
-          );
-
-          if (!refreshTokenDecoded || typeof refreshTokenDecoded !== 'object') {
-            throw new Error('Invalid refresh token');
-          }
-
-          const user = await this.userService.findByRefreshToken(
-            refreshToken + '',
-          );
-
-          if (!user) {
-            return next(); // 유저를 찾을 수 없는 경우 미들웨어 종료
-          }
           if (typeof refreshTokenDecoded === 'object') {
-            const updateAccessToken = this.jwtService.signAccessToken(user.id);
-            const updateRefreshToken = this.jwtService.signRefreshToken();
-            const accessTokenOptions: CookieOptions = {
-              httpOnly: true,
-              sameSite: 'none',
-              secure: true,
-            };
-
-            const refreshTokenOptions: CookieOptions = {
-              httpOnly: true,
-              sameSite: 'none',
-              secure: true,
-            };
-
-            res.cookie('accessToken', updateAccessToken, accessTokenOptions);
-            res.cookie('refreshToken', updateRefreshToken, refreshTokenOptions);
-            const newUser = await this.userService.updateRefreshToken(
-              user,
-              updateRefreshToken + '',
+            const user = await this.userService.findByRefreshToken(
+              refreshToken + '',
             );
 
-            if (!newUser) {
-              throw new Error('Failed to update refresh token');
+            if (!user) {
+              return next(); // 유저를 찾을 수 없는 경우 미들웨어 종료
             }
-            res.locals.user = newUser;
+
+            const updateAccessToken = this.jwtService.signAccessToken(user.id);
+
+            if (!updateAccessToken) {
+              return next();
+            }
+
+            const accessTokenOptions: CookieOptions = {
+              httpOnly: this.configService.get<boolean>(
+                'ACCESSTOKEN_HTTP_ONLY',
+              ),
+              sameSite: this.configService.get('ACCESSTOKEN_SAMESITE'),
+              secure: this.configService.get<boolean>('ACCESSTOKEN_SECURE'),
+              maxAge: this.configService.get<number>('ACCESSTOKEN_MAX_AGE'),
+            };
+
+            const accessTokenDecoded = await this.jwtService.accessTokenVerify(
+              updateAccessToken.toString(),
+            );
+
+            const updateUserInAccessToken = await this.userService.findById(
+              accessTokenDecoded['id'],
+            );
+
+            if (!updateUserInAccessToken) {
+              return next();
+            }
+
+            res.cookie('nda', updateAccessToken, accessTokenOptions);
+            res.locals.user = updateUserInAccessToken;
+
+            return next();
           }
         } catch (error) {}
       }

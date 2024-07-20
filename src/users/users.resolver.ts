@@ -11,7 +11,7 @@ import { Args, Mutation, Resolver, Query, Context } from '@nestjs/graphql';
 import { UserProfileInput, UserProfileOutput } from './dtos/user-profile.dto';
 import { Role } from 'src/auth/role.decorator';
 import { AuthUser } from 'src/auth/auth-user.decorator';
-import { LogoutOutput } from './dtos/logout.dto';
+import { LogoutInput, LogoutOutput } from './dtos/logout.dto';
 import { Res } from '@nestjs/common';
 
 @Resolver((of) => User)
@@ -47,9 +47,14 @@ export class UsersResolver {
     return this.userService.findById(userProfileInput.userId);
   }
 
-  @Query((returns) => LoginOutput)
+  @Mutation((returns) => LogoutOutput)
   @Role(['Any'])
-  async logout(@AuthUser() authUser: User): Promise<LogoutOutput> {
-    return this.userService.logout(authUser);
+  async logout(
+    @AuthUser() authUser: User,
+    @Args('input') logoutInput: LogoutInput,
+    @Res({ passthrough: true }) req: Request,
+  ): Promise<LogoutOutput> {
+    console.log('여기왔니?');
+    return this.userService.logout(authUser, logoutInput, req);
   }
 }

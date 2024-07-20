@@ -38,6 +38,16 @@ import { JwtMiddleware } from './jwt/jwt.middleware';
         ACCESSTOKEN_EXPIRESIN: Joi.string().required(),
         REFRESHTOKEN_EXPIRESIN: Joi.string().required(),
         BCRYPT_SALT_ROUNDS: Joi.string().required(),
+        ACCESSTOKEN_HTTP_ONLY: Joi.boolean().required(),
+        ACCESSTOKEN_SAMESITE: Joi.required(),
+        ACCESSTOKEN_SECURE: Joi.boolean().required(),
+        ACCESSTOKEN_MAX_AGE: Joi.number().required(),
+        REFRESHTOKEN_HTTP_ONLY: Joi.boolean().required(),
+        REFRESHTOKEN_SAMESITE: Joi.required(),
+        REFRESHTOKEN_SECURE: Joi.boolean().required(),
+        REFRESHTOKEN_MAX_AGE: Joi.number().required(),
+        ACCESSTOKEN_LOGOUT_MAX_AGE: Joi.number().required(),
+        REFRESHTOKEN_LOGOUT_MAX_AGE: Joi.number().required(),
       }),
     }),
     TypeOrmModule.forRoot({
@@ -84,6 +94,6 @@ export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(JwtMiddleware)
-      .forRoutes({ path: '/graphql', method: RequestMethod.ALL });
+      .forRoutes({ path: '/graphql', method: RequestMethod.POST });
   }
 }
