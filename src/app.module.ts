@@ -8,7 +8,7 @@ import {
 import { GraphQLModule } from '@nestjs/graphql';
 import { UsersModule } from './users/users.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as Joi from 'joi';
 import { User } from './users/entities/user.entity';
 import { JwtModule } from './jwt/jwt.module';
@@ -37,7 +37,7 @@ import { JwtMiddleware } from './jwt/jwt.middleware';
         ACCESSTOKEN_PRIVATE_KEY: Joi.string().required(),
         ACCESSTOKEN_EXPIRESIN: Joi.string().required(),
         REFRESHTOKEN_EXPIRESIN: Joi.string().required(),
-        BCRYPT_SALT_ROUNDS: Joi.string().required(),
+        BCRYPT_SALT_ROUNDS: Joi.number().default(10),
         ACCESSTOKEN_HTTP_ONLY: Joi.boolean().required(),
         ACCESSTOKEN_SAMESITE: Joi.required(),
         ACCESSTOKEN_SECURE: Joi.boolean().required(),
@@ -45,7 +45,7 @@ import { JwtMiddleware } from './jwt/jwt.middleware';
         REFRESHTOKEN_HTTP_ONLY: Joi.boolean().required(),
         REFRESHTOKEN_SAMESITE: Joi.required(),
         REFRESHTOKEN_SECURE: Joi.boolean().required(),
-        REFRESHTOKEN_MAX_AGE: Joi.number().required(),
+        REFRESHTOKEN_MAX_AGE: Joi.string().required(),
         ACCESSTOKEN_LOGOUT_MAX_AGE: Joi.number().required(),
         REFRESHTOKEN_LOGOUT_MAX_AGE: Joi.number().required(),
       }),
@@ -88,7 +88,7 @@ import { JwtMiddleware } from './jwt/jwt.middleware';
     NoticeModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [ConfigService],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

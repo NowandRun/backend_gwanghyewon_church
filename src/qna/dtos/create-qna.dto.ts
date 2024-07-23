@@ -7,6 +7,6 @@ export class CreateQnaInput extends PickType(Qna, ['description', 'title']) {}
 
 @ObjectType()
 export class CreateQnaOutput extends CoreOutput {
-  @Field((type) => Qna, { nullable: true })
-  results?: Qna;
+  @Field((type) => Int)
+  qnaId?: number;
 }

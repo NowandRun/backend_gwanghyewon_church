@@ -6,10 +6,10 @@ import {
 } from 'src/common/dtos/pagination.dto';
 
 @InputType()
-export class QnasInput extends PaginationInput {}
+export class QnasCommentsInput extends PaginationInput {}
 
 @ObjectType()
-export class QnasOutput extends PaginationOutput {
+export class QnasCommentsOutput extends PaginationOutput {
   @Field((type) => [Qna], { nullable: true })
   results?: Qna[];
 }

@@ -35,7 +35,7 @@ export class QnaService {
 
       return {
         ok: true,
-        results: newQna,
+        qnaId: newQna.id,
       };
     } catch {
       return {

@@ -30,7 +30,7 @@ export class NoticeResolver {
   }
 
   @Query((returns) => NoticeOutput)
-  qna(@Args('input') noticeInput: NoticeInput): Promise<NoticeOutput> {
+  notice(@Args('input') noticeInput: NoticeInput): Promise<NoticeOutput> {
     return this.noticeService.findNoticeById(noticeInput);
   }
 }

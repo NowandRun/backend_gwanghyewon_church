@@ -9,4 +9,7 @@ export class CreateQnaCommentInput extends PickType(QnaComment, ['comment']) {
 }
 
 @ObjectType()
-export class CreateQnaCommentOutput extends CoreOutput {}
+export class CreateQnaCommentOutput extends CoreOutput {
+  @Field((type) => [QnaComment], { nullable: true })
+  results?: QnaComment[];
+}

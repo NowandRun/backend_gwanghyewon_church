@@ -19,6 +19,7 @@ export class UsersResolver {
   constructor(private readonly userService: UsersService) {}
 
   @Mutation((returns) => CreateAccountOutput)
+  @Role(['Manager'])
   createAccount(
     @Args('input') createAccountInput: CreateAccountInput,
   ): Promise<CreateAccountOutput> {
@@ -34,7 +35,7 @@ export class UsersResolver {
   }
 
   @Query((returns) => User)
-  @Role(['Manager'])
+  @Role(['Any'])
   me(@AuthUser() authUser: User) {
     return authUser;
   }
@@ -54,7 +55,6 @@ export class UsersResolver {
     @Args('input') logoutInput: LogoutInput,
     @Res({ passthrough: true }) req: Request,
   ): Promise<LogoutOutput> {
-    console.log('여기왔니?');
     return this.userService.logout(authUser, logoutInput, req);
   }
 }

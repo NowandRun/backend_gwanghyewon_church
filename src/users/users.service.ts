@@ -1,5 +1,5 @@
 import { InjectRepository } from '@nestjs/typeorm';
-import { Injectable, Req, Res } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import {
   CreateAccountInput,
@@ -29,7 +29,6 @@ export class UsersService {
     role,
   }: CreateAccountInput): Promise<CreateAccountOutput> {
     try {
-      userId = 'wavenexus' + userId;
       const exists = await this.users.findOne({
         where: { userId },
       });
@@ -37,10 +36,15 @@ export class UsersService {
         // make error
         return { ok: false, error: 'There is a user with that email already' };
       }
+      const userdata = this.users.create({
+        userId,
+        password,
+        role,
+        service,
+        userName,
+      });
+      const data = await this.users.save(userdata);
 
-      await this.users.save(
-        this.users.create({ userId, password, role, service, userName }),
-      );
       return { ok: true };
     } catch (e) {
       return { ok: false, error: "Couldn't create account" };

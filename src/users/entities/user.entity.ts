@@ -4,13 +4,11 @@ import {
   ObjectType,
   registerEnumType,
 } from '@nestjs/graphql';
-import { BeforeInsert, BeforeUpdate, Column, Entity, OneToMany } from 'typeorm';
+import { BeforeInsert, BeforeUpdate, Column, Entity } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { InternalServerErrorException } from '@nestjs/common';
-import { IsEmail, IsEnum, IsString } from 'class-validator';
-import { Qna } from 'src/qna/entities/qna.entity';
-import { ConfigService } from '@nestjs/config';
+import { IsEnum, IsString } from 'class-validator';
 
 // enum 값을 export로 내보냄: SetMetadata로 사용
 export enum UserRole {
@@ -24,10 +22,6 @@ registerEnumType(UserRole, { name: 'UserRole' });
 @ObjectType()
 @Entity()
 export class User extends CoreEntity {
-  constructor(private readonly configSerivce: ConfigService) {
-    super();
-  }
-
   @Column({ unique: true })
   @Field((type) => String)
   @IsString()
@@ -63,10 +57,7 @@ export class User extends CoreEntity {
   async hashPassword(): Promise<void> {
     if (this.password) {
       try {
-        const saltRounds = parseInt(
-          this.configSerivce.get<string>('BCRYPT_SALT_ROUNDS'),
-        );
-        this.password = await bcrypt.hash(this.password, saltRounds);
+        this.password = await bcrypt.hash(this.password, 10);
       } catch (e) {
         console.log(e);
         throw new InternalServerErrorException();

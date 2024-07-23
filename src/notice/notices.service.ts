@@ -48,7 +48,7 @@ export class NoticeService {
         skip: (page - 1) * 30,
         take: 30,
         order: {
-          createdAt: 'ASC',
+          createdAt: 'DESC',
         },
       });
       return {
@@ -66,7 +66,6 @@ export class NoticeService {
     try {
       const notice = await this.notices.findOne({
         where: { id: noticeId },
-        relations: ['qnaComment'],
       });
 
       if (!notice) {
