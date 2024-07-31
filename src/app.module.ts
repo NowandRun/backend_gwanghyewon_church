@@ -51,7 +51,7 @@ import { JwtMiddleware } from './jwt/jwt.middleware';
       }),
     }),
     TypeOrmModule.forRoot({
-      type: 'postgres',
+      type: process.env.NODE_ENV !== 'production' ? 'postgres' : 'mysql',
       ...(process.env.DATABASE_URL
         ? { url: process.env.DATABASE_URL }
         : {
@@ -61,9 +61,10 @@ import { JwtMiddleware } from './jwt/jwt.middleware';
             password: process.env.DB_PASSWORD,
             database: process.env.DB_NAME,
           }),
-      synchronize: process.env.NODE_ENV !== 'prod',
+      synchronize: process.env.NODE_ENV !== 'production',
       logging:
-        process.env.NODE_ENV !== 'prod' && process.env.NODE_ENV !== 'test',
+        process.env.NODE_ENV !== 'production' &&
+        process.env.NODE_ENV !== 'test',
       entities: [User, Qna, QnaComment, Notice],
     }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
@@ -76,6 +77,7 @@ import { JwtMiddleware } from './jwt/jwt.middleware';
         };
       },
     }),
+
     JwtModule.forRoot({
       accessTokenPrivateKey: process.env.ACCESSTOKEN_PRIVATE_KEY,
       refreshTokenPrivateKey: process.env.REFRESHTOKEN_PRIVATE_KEY,

@@ -43,7 +43,7 @@ export class UsersService {
         service,
         userName,
       });
-      const data = await this.users.save(userdata);
+      await this.users.save(userdata);
 
       return { ok: true };
     } catch (e) {
@@ -73,12 +73,6 @@ export class UsersService {
       await this.users.update(user.id, {
         currentRefreshToken: refreshToken,
       });
-      const accessTokenOptions: CookieOptions = {
-        httpOnly: this.configService.get<boolean>('ACCESSTOKEN_HTTP_ONLY'),
-        sameSite: this.configService.get('ACCESSTOKEN_SAMESITE'),
-        secure: this.configService.get<boolean>('ACCESSTOKEN_SECURE'),
-        maxAge: this.configService.get<number>('ACCESSTOKEN_MAX_AGE'),
-      };
 
       const refreshTokenOptions: CookieOptions = {
         httpOnly: this.configService.get<boolean>('REFRESHTOKEN_HTTP_ONLY'),
@@ -86,7 +80,7 @@ export class UsersService {
         secure: this.configService.get<boolean>('REFRESHTOKEN_SECURE'),
         maxAge: this.configService.get<number>('REFRESHTOKEN_MAX_AGE'),
       };
-      req.res.cookie('nda', accessToken, accessTokenOptions);
+
       req.res.cookie('ndr', refreshToken, refreshTokenOptions);
       return {
         ok: true,
