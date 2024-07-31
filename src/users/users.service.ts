@@ -10,9 +10,8 @@ import { User } from './entities/user.entity';
 import { JwtService } from 'src/jwt/jwt.service';
 import { UserProfileOutput } from './dtos/user-profile.dto';
 import { LogoutInput, LogoutOutput } from './dtos/logout.dto';
-import { CookieOptions } from 'express';
+import { CookieOptions, Response } from 'express';
 import { ConfigService } from '@nestjs/config';
-
 @Injectable()
 export class UsersService {
   constructor(
@@ -51,7 +50,10 @@ export class UsersService {
     }
   }
 
-  async login({ userId, password }: LoginInput, req): Promise<LoginOutput> {
+  async login(
+    { userId, password }: LoginInput,
+    res: Response,
+  ): Promise<LoginOutput> {
     try {
       const user = await this.users.findOne({
         where: { userId },
@@ -80,14 +82,13 @@ export class UsersService {
         secure: this.configService.get<boolean>('REFRESHTOKEN_SECURE'),
         maxAge: this.configService.get<number>('REFRESHTOKEN_MAX_AGE'),
       };
-
-      req.res.cookie('ndr', refreshToken, refreshTokenOptions);
+      res.cookie('ndr', refreshToken, refreshTokenOptions);
       return {
         ok: true,
         accessToken,
-        refreshToken,
       };
     } catch (error) {
+      console.log(error);
       return {
         ok: false,
         error: "Couldn't login account",

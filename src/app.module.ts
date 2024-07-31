@@ -51,7 +51,7 @@ import { JwtMiddleware } from './jwt/jwt.middleware';
       }),
     }),
     TypeOrmModule.forRoot({
-      type: 'mysql',
+      type: 'postgres',
       ...(process.env.DATABASE_URL
         ? { url: process.env.DATABASE_URL }
         : {

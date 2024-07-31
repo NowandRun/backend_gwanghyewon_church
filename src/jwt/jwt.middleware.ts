@@ -12,10 +12,9 @@ export class JwtMiddleware implements NestMiddleware {
     private readonly configService: ConfigService,
   ) {}
   async use(req: Request, res: Response, next: NextFunction) {
-    console.log(req);
-    const accessToken = req.headers['accesstoken'];
+    console.log(req.cookies);
+    const accessToken = req.headers['accessToken'];
     const refreshToken = req.cookies['ndr'];
-    console.log(req.res.cookie);
 
     if (!refreshToken) {
       res.clearCookie('nda');
@@ -54,14 +53,6 @@ export class JwtMiddleware implements NestMiddleware {
         return next();
       }
 
-      const accessTokenOptions: CookieOptions = {
-        httpOnly: this.configService.get<boolean>('ACCESSTOKEN_HTTP_ONLY'),
-        sameSite: this.configService.get('ACCESSTOKEN_SAMESITE'),
-        secure: this.configService.get<boolean>('ACCESSTOKEN_SECURE'),
-        maxAge: this.configService.get<number>('ACCESSTOKEN_MAX_AGE'),
-      };
-
-      res.cookie('nda', revisitUpdateAccessToken, accessTokenOptions);
       res.locals.user = reVisitupdateUserInAccessToken;
 
       return next();
