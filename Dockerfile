@@ -3,8 +3,9 @@ RUN mkdir -p /svr/app
 WORKDIR /svr/app
 COPY . .
 RUN npm install
-RUN npm run build
+RUN npm install @nestjs/core
 RUN npm i -g @nestjs/cli --silent
+RUN npm run build
 EXPOSE 4000
 CMD ["node", "dist/main.js"]
 ENV DB_HOST=172.26.186.243 \
