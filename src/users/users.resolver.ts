@@ -30,10 +30,9 @@ export class UsersResolver {
   @Mutation((returns) => LoginOutput)
   login(
     @Args('input') loginInput: LoginInput,
-    @Context() context: any,
+    @Res({ passthrough: true }) req: Request,
   ): Promise<LoginOutput> {
-    const { res } = context; // HTTP Response 객체
-    return this.userService.login(loginInput, res);
+    return this.userService.login(loginInput, req);
   }
 
   @Query((returns) => User)

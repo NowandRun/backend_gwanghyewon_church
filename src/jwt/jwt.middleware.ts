@@ -1,30 +1,27 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
-import { CookieOptions, NextFunction, Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { JwtService } from './jwt.service';
 import { UsersService } from 'src/users/users.service';
-import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class JwtMiddleware implements NestMiddleware {
   constructor(
     private readonly jwtService: JwtService,
     private readonly userService: UsersService,
-    private readonly configService: ConfigService,
   ) {}
   async use(req: Request, res: Response, next: NextFunction) {
-    console.log(req.cookies);
     const accessToken = req.headers['accessToken'];
     const refreshToken = req.cookies['ndr'];
 
     if (!refreshToken) {
-      res.clearCookie('nda');
+      delete req.headers['access-token'];
       res.clearCookie('ndr');
       return next();
     }
 
     const user = await this.userService.findByRefreshToken(refreshToken + '');
     if (!user) {
-      res.clearCookie('nda');
+      delete req.headers['access-token'];
       res.clearCookie('ndr');
       return next(); // 유저를 찾을 수 없는 경우 미들웨어 종료
     }
@@ -46,8 +43,6 @@ export class JwtMiddleware implements NestMiddleware {
         accessTokenDecoded['id'],
       );
 
-      console.log(reVisitupdateUserInAccessToken);
-
       if (!reVisitupdateUserInAccessToken) {
         res.clearCookie('ndr');
         return next();
@@ -63,7 +58,7 @@ export class JwtMiddleware implements NestMiddleware {
     );
 
     if (!refreshTokenDecoded || typeof refreshTokenDecoded !== 'object') {
-      res.clearCookie('nda');
+      delete req.headers['access-token'];
       res.clearCookie('ndr');
       return next();
     }
@@ -73,7 +68,7 @@ export class JwtMiddleware implements NestMiddleware {
         accessToken.toString(),
       );
       await this.userService.logoutMiddleware(accessTokenDecoded['id']);
-      res.locals.user = '';
+      delete req.headers['access-token'];
       res.clearCookie('nda');
       return next();
     }
@@ -85,7 +80,7 @@ export class JwtMiddleware implements NestMiddleware {
         );
         if (!accessTokenDecoded || !accessTokenDecoded.hasOwnProperty('id')) {
           /* throw new Error('Invalid access token'); */
-          res.clearCookie('nda');
+          delete req.headers['access-token'];
           res.clearCookie('ndr');
           return next();
         }
@@ -115,15 +110,6 @@ export class JwtMiddleware implements NestMiddleware {
               return next();
             }
 
-            const accessTokenOptions: CookieOptions = {
-              httpOnly: this.configService.get<boolean>(
-                'ACCESSTOKEN_HTTP_ONLY',
-              ),
-              sameSite: this.configService.get('ACCESSTOKEN_SAMESITE'),
-              secure: this.configService.get<boolean>('ACCESSTOKEN_SECURE'),
-              maxAge: this.configService.get<number>('ACCESSTOKEN_MAX_AGE'),
-            };
-
             const accessTokenDecoded = await this.jwtService.accessTokenVerify(
               updateAccessToken.toString(),
             );
@@ -136,7 +122,8 @@ export class JwtMiddleware implements NestMiddleware {
               return next();
             }
 
-            res.cookie('nda', updateAccessToken, accessTokenOptions);
+            this.jwtService.signAccessToken(updateUserInAccessToken.user.id);
+
             res.locals.user = updateUserInAccessToken;
 
             return next();

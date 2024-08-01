@@ -50,10 +50,7 @@ export class UsersService {
     }
   }
 
-  async login(
-    { userId, password }: LoginInput,
-    res: Response,
-  ): Promise<LoginOutput> {
+  async login({ userId, password }: LoginInput, req): Promise<LoginOutput> {
     try {
       const user = await this.users.findOne({
         where: { userId },
@@ -77,12 +74,12 @@ export class UsersService {
       });
 
       const refreshTokenOptions: CookieOptions = {
-        httpOnly: this.configService.get<boolean>('REFRESHTOKEN_HTTP_ONLY'),
-        sameSite: this.configService.get('REFRESHTOKEN_SAMESITE'),
-        secure: this.configService.get<boolean>('REFRESHTOKEN_SECURE'),
-        maxAge: this.configService.get<number>('REFRESHTOKEN_MAX_AGE'),
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: false,
+        maxAge: 604800000,
       };
-      res.cookie('ndr', refreshToken, refreshTokenOptions);
+      req.res.cookie('ndr', refreshToken, refreshTokenOptions);
       return {
         ok: true,
         accessToken,
