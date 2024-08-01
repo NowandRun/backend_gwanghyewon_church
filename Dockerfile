@@ -4,6 +4,7 @@ WORKDIR /svr/app
 COPY . .
 RUN npm install
 RUN npm i -g @nestjs/cli --silent
+RUN npm i @nestjs/core
 RUN npm run build
 EXPOSE 4000
 CMD ["node", "dist/main.js"]
