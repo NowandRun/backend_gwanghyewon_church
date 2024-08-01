@@ -3,7 +3,6 @@ RUN mkdir -p /svr/app
 WORKDIR /svr/app
 COPY . .
 RUN npm install
-RUN npm install @nestjs/core
 RUN npm i -g @nestjs/cli --silent
 RUN npm run build
 EXPOSE 4000
