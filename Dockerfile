@@ -1,10 +1,8 @@
 FROM node:18
-RUN mkdir -p /svr/app
-WORKDIR /svr/app
+RUN mkdir -p /app
+WORKDIR /app
 COPY . .
 RUN npm install
-RUN npm i -g @nestjs/cli --silent
-RUN npm i -g @nestjs/core
 RUN npm run build
 EXPOSE 4000
 CMD ["node", "dist/main.js"]
