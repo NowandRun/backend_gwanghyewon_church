@@ -42,7 +42,6 @@ import { JwtMiddleware } from './jwt/jwt.middleware';
         REFRESHTOKEN_SAMESITE: Joi.required(),
         REFRESHTOKEN_SECURE: Joi.boolean().required(),
         REFRESHTOKEN_MAX_AGE: Joi.string().required(),
-        ACCESSTOKEN_LOGOUT_MAX_AGE: Joi.number().required(),
         REFRESHTOKEN_LOGOUT_MAX_AGE: Joi.number().required(),
       }),
     }),

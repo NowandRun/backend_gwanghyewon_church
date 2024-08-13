@@ -29,8 +29,6 @@ export class JwtMiddleware implements NestMiddleware {
     if (!accessToken && refreshToken) {
       const revisitUpdateAccessToken = this.jwtService.signAccessToken(user.id);
 
-      console.log(revisitUpdateAccessToken);
-
       if (!revisitUpdateAccessToken) {
         return next();
       }
@@ -69,7 +67,7 @@ export class JwtMiddleware implements NestMiddleware {
       );
       await this.userService.logoutMiddleware(accessTokenDecoded['id']);
       delete req.headers['access-token'];
-      res.clearCookie('nda');
+      res.clearCookie('ndr');
       return next();
     }
 

@@ -74,10 +74,10 @@ export class UsersService {
       });
 
       const refreshTokenOptions: CookieOptions = {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: false,
-        maxAge: 604800000,
+        httpOnly: this.configService.get<boolean>('REFRESHTOKEN_HTTP_ONLY'),
+        sameSite: this.configService.get('REFRESHTOKEN_SAMESITE'),
+        secure: this.configService.get<boolean>('REFRESHTOKEN_SECURE'),
+        maxAge: this.configService.get<number>('REFRESHTOKEN_LOGOUT_MAX_AGE'),
       };
       req.res.cookie('ndr', refreshToken, refreshTokenOptions);
       return {
@@ -146,13 +146,6 @@ export class UsersService {
         currentRefreshToken: null,
       });
 
-      const accessTokenOptions: CookieOptions = {
-        httpOnly: this.configService.get<boolean>('ACCESSTOKEN_HTTP_ONLY'),
-        sameSite: this.configService.get('ACCESSTOKEN_SAMESITE'),
-        secure: this.configService.get<boolean>('ACCESSTOKEN_SECURE'),
-        maxAge: this.configService.get<number>('ACCESSTOKEN_LOGOUT_MAX_AGE'),
-      };
-
       const refreshTokenOptions: CookieOptions = {
         httpOnly: this.configService.get<boolean>('REFRESHTOKEN_HTTP_ONLY'),
         sameSite: this.configService.get('REFRESHTOKEN_SAMESITE'),
@@ -160,7 +153,6 @@ export class UsersService {
         maxAge: this.configService.get<number>('REFRESHTOKEN_LOGOUT_MAX_AGE'),
       };
 
-      req.res.cookie('nda', '', accessTokenOptions);
       req.res.cookie('ndr', '', refreshTokenOptions);
 
       return {
