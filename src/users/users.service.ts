@@ -56,6 +56,7 @@ export class UsersService {
         where: { userId },
         select: ['id', 'password'],
       });
+
       if (!user) {
         return { ok: false, error: 'User not found' };
       }
@@ -69,16 +70,33 @@ export class UsersService {
       const accessToken = this.jwtService.signAccessToken(user.id);
       const refreshToken = this.jwtService.signRefreshToken();
 
-      await this.users.update(user.id, {
+      const data = await this.users.update(user.id, {
         currentRefreshToken: refreshToken,
       });
-
       const refreshTokenOptions: CookieOptions = {
         httpOnly: this.configService.get<boolean>('REFRESHTOKEN_HTTP_ONLY'),
         sameSite: this.configService.get('REFRESHTOKEN_SAMESITE'),
         secure: this.configService.get<boolean>('REFRESHTOKEN_SECURE'),
-        maxAge: this.configService.get<number>('REFRESHTOKEN_LOGOUT_MAX_AGE'),
+        maxAge: this.configService.get<number>('REFRESHTOKEN_MAX_AGE'),
       };
+
+      console.log(
+        'REFRESHTOKEN_HTTP_ONLY:',
+        this.configService.get<boolean>('REFRESHTOKEN_HTTP_ONLY'),
+      );
+      console.log(
+        'REFRESHTOKEN_SAMESITE:',
+        typeof this.configService.get<string>('REFRESHTOKEN_SAMESITE'),
+      );
+      console.log(
+        'REFRESHTOKEN_SECURE:',
+        this.configService.get<boolean>('REFRESHTOKEN_SECURE'),
+      );
+      console.log(
+        'REFRESHTOKEN_LOGOUT_MAX_AGE:',
+        this.configService.get<number>('REFRESHTOKEN_MAX_AGE'),
+      );
+
       req.res.cookie('ndr', refreshToken, refreshTokenOptions);
       return {
         ok: true,

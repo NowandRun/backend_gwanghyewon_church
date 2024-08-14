@@ -12,7 +12,7 @@ export class JwtMiddleware implements NestMiddleware {
   async use(req: Request, res: Response, next: NextFunction) {
     const accessToken = req.headers['accessToken'];
     const refreshToken = req.cookies['ndr'];
-
+    console.log(req.cookies);
     if (!refreshToken) {
       delete req.headers['access-token'];
       res.clearCookie('ndr');
