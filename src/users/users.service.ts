@@ -70,7 +70,7 @@ export class UsersService {
       const accessToken = this.jwtService.signAccessToken(user.id);
       const refreshToken = this.jwtService.signRefreshToken();
 
-      const data = await this.users.update(user.id, {
+      await this.users.update(user.id, {
         currentRefreshToken: refreshToken,
       });
       const refreshTokenOptions: CookieOptions = {
