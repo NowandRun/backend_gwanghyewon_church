@@ -12,6 +12,9 @@ import {
   CreateQnaCommentOutput,
 } from './dtos/create-qna-comment.dto';
 import { QnaInput, QnaOutput } from './dtos/qna.dto';
+import { QnaNotice } from './entities/qna-notice.entity';
+import { QnasNoticeOutput } from './dtos/qna-notices.dto';
+import { QnaNoticeInput, QnaNoticeOutput } from './dtos/qna-notice.dto';
 
 @Resolver((of) => Qna)
 export class QnaResolver {
@@ -28,12 +31,27 @@ export class QnaResolver {
 
   @Query((returns) => QnasOutput)
   qnas(@Args('input') qnaInput: QnasInput): Promise<QnasOutput> {
-    return this.qnaService.allQna(qnaInput);
+    return this.qnaService.allClientQna(qnaInput);
   }
 
   @Query((returns) => QnaOutput)
   qna(@Args('input') qnaInput: QnaInput): Promise<QnaOutput> {
-    return this.qnaService.findQnaById(qnaInput);
+    return this.qnaService.findQnaClientById(qnaInput);
+  }
+}
+
+@Resolver((of) => QnaNotice)
+export class QnaNoticeResolver {
+  constructor(private readonly qnaService: QnaService) {}
+
+  @Query((returns) => QnasNoticeOutput)
+  qnaNotices(): Promise<QnasNoticeOutput> {
+    return this.qnaService.allNoticeQna();
+  }
+
+  @Query((returns) => QnaNoticeOutput)
+  qnaNotice(@Args('input') qnaNoticeInput: QnaNoticeInput): Promise<QnaOutput> {
+    return this.qnaService.findQnaNoticeById(qnaNoticeInput);
   }
 }
 

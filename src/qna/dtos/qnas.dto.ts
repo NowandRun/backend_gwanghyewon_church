@@ -1,4 +1,5 @@
 import { Field, InputType, ObjectType } from '@nestjs/graphql';
+
 import { Qna } from '../entities/qna.entity';
 import {
   PaginationInput,

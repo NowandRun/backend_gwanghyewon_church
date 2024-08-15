@@ -19,6 +19,7 @@ import { QnaComment } from './qna/entities/qna-comment.entity';
 import { Notice } from './notice/entities/notice.entity';
 import { NoticeModule } from './notice/notices.module';
 import { JwtMiddleware } from './jwt/jwt.middleware';
+import { QnaNotice } from './qna/entities/qna-notice.entity';
 
 @Module({
   imports: [
@@ -60,7 +61,7 @@ import { JwtMiddleware } from './jwt/jwt.middleware';
       logging:
         process.env.NODE_ENV !== 'production' &&
         process.env.NODE_ENV !== 'test',
-      entities: [User, Qna, QnaComment, Notice],
+      entities: [User, Qna, QnaComment, Notice, QnaNotice],
     }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,

@@ -9,6 +9,9 @@ import { CreateQnaCommentInput } from './dtos/create-qna-comment.dto';
 import { QnaComment } from './entities/qna-comment.entity';
 import { QnaInput, QnaOutput } from './dtos/qna.dto';
 import { UsersService } from 'src/users/users.service';
+import { QnaNotice } from './entities/qna-notice.entity';
+import { QnasNoticeOutput } from './dtos/qna-notices.dto';
+import { QnaNoticeInput, QnaNoticeOutput } from './dtos/qna-notice.dto';
 
 @Injectable()
 export class QnaService {
@@ -17,6 +20,8 @@ export class QnaService {
     private readonly qnas: Repository<Qna>,
     @InjectRepository(QnaComment)
     private readonly qnaComments: Repository<QnaComment>,
+    @InjectRepository(QnaNotice)
+    private readonly qnaNotices: Repository<QnaNotice>,
     private readonly userService: UsersService,
   ) {}
 
@@ -25,18 +30,43 @@ export class QnaService {
     { description, title }: CreateQnaInput,
   ): Promise<CreateQnaOutput> {
     try {
-      const qna = new Qna();
-      qna.userId = user.id;
-      qna.userName = this.maskUserName(user.userName);
-      qna.title = title;
-      qna.description = description;
+      if (user.role === UserRole.Client) {
+        const qna = new Qna();
+        qna.userId = user.id;
+        qna.userName = this.maskUserName(user.userName);
+        qna.title = title;
+        qna.description = description;
 
-      const newQna = await this.qnas.save(this.qnas.create(qna));
+        const newQna = await this.qnas.save(this.qnas.create(qna));
 
-      return {
-        ok: true,
-        qnaId: newQna.id,
-      };
+        return {
+          ok: true,
+          qnaId: newQna.id,
+        };
+      }
+
+      if (user.role === UserRole.Manager) {
+        const qnaNotices = await this.allNoticeQna();
+        console.log(qnaNotices);
+        if (qnaNotices.results.length >= 6) {
+          return {
+            ok: false,
+            error: '더 이상 공지 게시물을 작성할 수 없습니다.',
+          };
+        }
+        const qnaNotice = new QnaNotice();
+        qnaNotice.userId = user.id;
+        qnaNotice.userName = user.userName;
+        qnaNotice.title = title;
+        qnaNotice.description = description;
+        const newQnaNotice = await this.qnaNotices.save(
+          this.qnaNotices.create(qnaNotice),
+        );
+        return {
+          ok: true,
+          qnaId: newQnaNotice.id,
+        };
+      }
     } catch {
       return {
         ok: false,
@@ -45,7 +75,7 @@ export class QnaService {
     }
   }
 
-  async allQna({ page }: QnasInput): Promise<QnasOutput> {
+  async allClientQna({ page }: QnasInput): Promise<QnasOutput> {
     try {
       const [results, totalResults] = await this.qnas.findAndCount({
         skip: (page - 1) * 30,
@@ -62,6 +92,23 @@ export class QnaService {
       };
     } catch {
       return { ok: false, error: 'Could not load qna' };
+    }
+  }
+
+  async allNoticeQna(): Promise<QnasNoticeOutput> {
+    try {
+      const qnaNoticeResults = await this.qnaNotices.find({
+        order: {
+          createdAt: 'DESC',
+        },
+      });
+
+      return {
+        ok: true,
+        results: qnaNoticeResults,
+      };
+    } catch {
+      return { ok: false, error: 'Could not load qna notice' };
     }
   }
 
@@ -109,7 +156,7 @@ export class QnaService {
     }
   }
 
-  async findQnaById({ qnaId }: QnaInput): Promise<QnaOutput> {
+  async findQnaClientById({ qnaId }: QnaInput): Promise<QnaOutput> {
     try {
       const qna = await this.qnas.findOne({
         where: { id: qnaId },
@@ -119,7 +166,7 @@ export class QnaService {
       if (!qna) {
         return {
           ok: false,
-          error: 'Restaurant not found',
+          error: 'Qna not found',
         };
       }
 
@@ -137,7 +184,41 @@ export class QnaService {
     } catch {
       return {
         ok: false,
-        error: 'Could not find reataurant',
+        error: 'Could not find Qna',
+      };
+    }
+  }
+
+  async findQnaNoticeById({
+    qnaNoticeId,
+  }: QnaNoticeInput): Promise<QnaNoticeOutput> {
+    try {
+      const qnaNotice = await this.qnaNotices.findOne({
+        where: { id: qnaNoticeId },
+      });
+
+      if (!qnaNotice) {
+        return {
+          ok: false,
+          error: 'Qna notice not found',
+        };
+      }
+
+      const user = await this.userService.findById(qnaNotice.userId);
+
+      if (user.user.id !== qnaNotice.userId) {
+        qnaNotice.views += 1;
+        await this.qnaNotices.save({ id: qnaNoticeId, views: qnaNotice.views });
+      }
+
+      return {
+        ok: true,
+        qnaNotice,
+      };
+    } catch {
+      return {
+        ok: false,
+        error: 'Could not find Qna notice',
       };
     }
   }
