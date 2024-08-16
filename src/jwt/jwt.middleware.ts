@@ -2,6 +2,7 @@ import { Injectable, NestMiddleware } from '@nestjs/common';
 import { NextFunction, Request, Response } from 'express';
 import { JwtService } from './jwt.service';
 import { UsersService } from 'src/users/users.service';
+import { access } from 'fs';
 
 @Injectable()
 export class JwtMiddleware implements NestMiddleware {
@@ -10,24 +11,31 @@ export class JwtMiddleware implements NestMiddleware {
     private readonly userService: UsersService,
   ) {}
   async use(req: Request, res: Response, next: NextFunction) {
-    const accessToken = req.headers['accessToken'];
+    const authorizationHeader = req.headers['authorization'];
+    // authorizationHeader가 배열일 경우 첫 번째 요소를 사용
+
+    // Bearer가 포함된 경우, Bearer를 제거한 토큰만 추출
+    const accessToken = authorizationHeader.slice(7);
+
+    // "Bearer "를 제거한 후 토큰만 추출합니다.
+
     const refreshToken = req.cookies['ndr'];
     if (!refreshToken) {
-      delete req.headers['access-token'];
+      delete req.headers['authorization'];
       res.clearCookie('ndr');
       return next();
     }
 
-    const user = await this.userService.findByRefreshToken(refreshToken + '');
+    const user = await this.userService.findByRefreshToken(refreshToken);
+
     if (!user) {
-      delete req.headers['access-token'];
+      delete req.headers['authorization'];
       res.clearCookie('ndr');
       return next(); // 유저를 찾을 수 없는 경우 미들웨어 종료
     }
 
     if (!accessToken && refreshToken) {
       const revisitUpdateAccessToken = this.jwtService.signAccessToken(user.id);
-
       if (!revisitUpdateAccessToken) {
         return next();
       }
@@ -39,6 +47,8 @@ export class JwtMiddleware implements NestMiddleware {
       const reVisitupdateUserInAccessToken = await this.userService.findById(
         accessTokenDecoded['id'],
       );
+
+      console.log(reVisitupdateUserInAccessToken);
 
       if (!reVisitupdateUserInAccessToken) {
         res.clearCookie('ndr');
@@ -53,9 +63,8 @@ export class JwtMiddleware implements NestMiddleware {
     const refreshTokenDecoded = await this.jwtService.refreshTokenVerify(
       refreshToken.toString(),
     );
-
     if (!refreshTokenDecoded || typeof refreshTokenDecoded !== 'object') {
-      delete req.headers['access-token'];
+      delete req.headers['authorization'];
       res.clearCookie('ndr');
       return next();
     }
@@ -65,19 +74,19 @@ export class JwtMiddleware implements NestMiddleware {
         accessToken.toString(),
       );
       await this.userService.logoutMiddleware(accessTokenDecoded['id']);
-      delete req.headers['access-token'];
+      delete req.headers['authorization'];
       res.clearCookie('ndr');
       return next();
     }
 
-    if ('nda' in req.cookies && 'ndr' in req.cookies) {
+    if (accessToken && 'ndr' in req.cookies) {
       try {
         const accessTokenDecoded = await this.jwtService.accessTokenVerify(
           accessToken.toString(),
         );
         if (!accessTokenDecoded || !accessTokenDecoded.hasOwnProperty('id')) {
           /* throw new Error('Invalid access token'); */
-          delete req.headers['access-token'];
+          delete req.headers['authorization'];
           res.clearCookie('ndr');
           return next();
         }
@@ -98,7 +107,6 @@ export class JwtMiddleware implements NestMiddleware {
           return next();
         }
       } catch (error) {
-        console.log(error);
         try {
           if (typeof refreshTokenDecoded === 'object') {
             const updateAccessToken = this.jwtService.signAccessToken(user.id);

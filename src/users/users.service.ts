@@ -80,23 +80,6 @@ export class UsersService {
         maxAge: this.configService.get<number>('REFRESHTOKEN_MAX_AGE'),
       };
 
-      console.log(
-        'REFRESHTOKEN_HTTP_ONLY:',
-        this.configService.get<boolean>('REFRESHTOKEN_HTTP_ONLY'),
-      );
-      console.log(
-        'REFRESHTOKEN_SAMESITE:',
-        typeof this.configService.get<string>('REFRESHTOKEN_SAMESITE'),
-      );
-      console.log(
-        'REFRESHTOKEN_SECURE:',
-        this.configService.get<boolean>('REFRESHTOKEN_SECURE'),
-      );
-      console.log(
-        'REFRESHTOKEN_LOGOUT_MAX_AGE:',
-        this.configService.get<number>('REFRESHTOKEN_MAX_AGE'),
-      );
-
       req.res.cookie('ndr', refreshToken, refreshTokenOptions);
       return {
         ok: true,

@@ -47,7 +47,6 @@ export class QnaService {
 
       if (user.role === UserRole.Manager) {
         const qnaNotices = await this.allNoticeQna();
-        console.log(qnaNotices);
         if (qnaNotices.results.length >= 6) {
           return {
             ok: false,
