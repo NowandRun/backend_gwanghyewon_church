@@ -8,6 +8,8 @@ async function bootstrap() {
     'http://localhost:3000',
     'https://wavenexus.co.kr',
     'https://www.wavenexus.co.kr',
+    'http://frontend:3000',
+    'https://frontend:3000',
   ];
 
   const app = await NestFactory.create(AppModule);
