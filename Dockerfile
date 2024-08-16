@@ -1,9 +1,9 @@
 FROM node:22 AS build
 RUN mkdir -p /app
 WORKDIR /app
-COPY package*.json ./app
+COPY package*.json /app/
 RUN npm install
-COPY . .
+COPY . /app
 RUN npm run build
 
 # Stage 2: Production
