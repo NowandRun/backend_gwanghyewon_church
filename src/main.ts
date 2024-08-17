@@ -11,6 +11,7 @@ async function bootstrap() {
     'http://frontend:3000',
     'https://frontend:3000',
     'http://nginx',
+    'https://nginx',
   ];
 
   const app = await NestFactory.create(AppModule);
