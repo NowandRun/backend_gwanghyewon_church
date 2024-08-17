@@ -47,7 +47,7 @@ import { QnaNotice } from './qna/entities/qna-notice.entity';
       }),
     }),
     TypeOrmModule.forRoot({
-      type: 'mysql',
+      type: 'postgres',
       ...(process.env.DATABASE_URL
         ? { url: process.env.DATABASE_URL }
         : {
