@@ -23,4 +23,4 @@ RUN npm install --only=production
 EXPOSE 4000
 
 # Command to run the application
-CMD ["node", "dist/main.js"]
+CMD ["sh", "-c", "npm run typeorm:run && node dist/main.js"]
