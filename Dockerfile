@@ -17,7 +17,7 @@ COPY --from=build /app/dist /app/dist
 COPY --from=build /app/package*.json ./
 
 # Install production dependencies
-RUN npm install --only=production
+RUN npm install --only=production && npm prune --production
 
 # Expose the port the app runs on
 EXPOSE 4000
