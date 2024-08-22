@@ -15,11 +15,17 @@ export class JwtMiddleware implements NestMiddleware {
     // authorizationHeader가 배열일 경우 첫 번째 요소를 사용
 
     // Bearer가 포함된 경우, Bearer를 제거한 토큰만 추출
-    const accessToken = authorizationHeader.slice(7);
+    const accessToken = authorizationHeader
+      ? authorizationHeader.slice(7)
+      : null;
 
     // "Bearer "를 제거한 후 토큰만 추출합니다.
 
     const refreshToken = req.cookies['ndr'];
+
+    if (!accessToken && !refreshToken) {
+      return next();
+    }
     if (!refreshToken) {
       delete req.headers['authorization'];
       res.clearCookie('ndr');

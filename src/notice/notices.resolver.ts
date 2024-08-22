@@ -16,7 +16,7 @@ export class NoticeResolver {
   constructor(private readonly noticeService: NoticeService) {}
 
   @Mutation((returns) => CreateNoticeOutput)
-  @Role(['Manager'])
+  @Role(['Admin'])
   async createNotice(
     @AuthUser() authUser: User,
     @Args('input') createNoticeInput: CreateNoticeInput,

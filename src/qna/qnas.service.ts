@@ -45,7 +45,7 @@ export class QnaService {
         };
       }
 
-      if (user.role === UserRole.Manager) {
+      if (user.role === UserRole.Admin) {
         const qnaNotices = await this.allNoticeQna();
         if (qnaNotices.results.length >= 6) {
           return {
@@ -134,7 +134,7 @@ export class QnaService {
       // QnaComment 엔티티 생성 및 저장
       const qnaComment = new QnaComment();
       qnaComment.userId = user.id;
-      if (user.role === UserRole.Manager) {
+      if (user.role === UserRole.Admin) {
         qnaComment.commentOwner = user.userName;
       }
       qnaComment.commentOwner = this.maskUserName(user.userName);

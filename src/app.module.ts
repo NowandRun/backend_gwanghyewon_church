@@ -20,6 +20,8 @@ import { Notice } from './notice/entities/notice.entity';
 import { NoticeModule } from './notice/notices.module';
 import { JwtMiddleware } from './jwt/jwt.middleware';
 import { QnaNotice } from './qna/entities/qna-notice.entity';
+import { ScheduleModule } from '@nestjs/schedule';
+import { RedisModule } from '@liaoliaots/nestjs-redis';
 
 @Module({
   imports: [
@@ -47,7 +49,7 @@ import { QnaNotice } from './qna/entities/qna-notice.entity';
       }),
     }),
     TypeOrmModule.forRoot({
-      type: 'mysql',
+      type: 'postgres',
       ...(process.env.DATABASE_URL
         ? { url: process.env.DATABASE_URL }
         : {
@@ -63,9 +65,26 @@ import { QnaNotice } from './qna/entities/qna-notice.entity';
         process.env.NODE_ENV !== 'test',
       entities: [User, Qna, QnaComment, Notice, QnaNotice],
     }),
+    RedisModule.forRoot({
+      readyLog: true,
+      config: {
+        host: 'localhost',
+        port: 6380,
+        password: 'bitnami',
+      },
+    }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       autoSchemaFile: true,
+      installSubscriptionHandlers: true,
+      /* subscriptions: {
+        'graphql-ws': {
+          onConnect: () => {
+            console.log('Client connected');
+            return {};
+          },
+        },
+      }, */
       context: ({ req, res, connection }) => {
         return {
           req,
@@ -73,7 +92,7 @@ import { QnaNotice } from './qna/entities/qna-notice.entity';
         };
       },
     }),
-
+    ScheduleModule.forRoot(),
     JwtModule.forRoot({
       accessTokenPrivateKey: process.env.ACCESSTOKEN_PRIVATE_KEY,
       refreshTokenPrivateKey: process.env.REFRESHTOKEN_PRIVATE_KEY,

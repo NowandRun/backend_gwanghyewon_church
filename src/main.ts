@@ -27,6 +27,6 @@ async function bootstrap() {
   app.enableCors(corsOptions);
   app.use(cookieParser());
 
-  await app.listen(process.env.PORT || 4000);
+  await app.listen(process.env.PORT || 4001);
 }
 bootstrap();
