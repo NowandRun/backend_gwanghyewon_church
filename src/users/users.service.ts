@@ -1,16 +1,16 @@
 import { InjectRepository } from '@nestjs/typeorm';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { LessThan, Repository } from 'typeorm';
 import {
   CreateAccountInput,
   CreateAccountOutput,
 } from './dtos/create-account.dto';
 import { LoginInput, LoginOutput } from './dtos/login.dto';
-import { PasswordCheakRole, User } from './entities/user.entity';
+import { PasswordCheakRole, User, UserRole } from './entities/user.entity';
 import { JwtService } from 'src/jwt/jwt.service';
 import { UserProfileOutput } from './dtos/user-profile.dto';
 import { LogoutInput, LogoutOutput } from './dtos/logout.dto';
-import { CookieOptions, Response } from 'express';
+import { CookieOptions } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { FindUserIdInput, FindUserIdOutput } from './dtos/find-user-id.dto';
 import {
@@ -20,14 +20,23 @@ import {
 import { Cron } from '@nestjs/schedule';
 import { InjectRedis } from '@liaoliaots/nestjs-redis';
 import { Redis } from 'ioredis';
+import {
+  NEW_DELETE_ACCOUNT_MESSAGE,
+  PUB_SUB,
+} from 'src/common/common.constants';
+import { RedisPubSub } from 'graphql-redis-subscriptions';
+import { UserInformationConsent } from './entities/user-information-consent.entity';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User) private readonly users: Repository<User>,
+    @InjectRepository(UserInformationConsent)
+    private readonly userInformationConsents: Repository<UserInformationConsent>,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     @InjectRedis() private readonly redis: Redis,
+    @Inject(PUB_SUB) private readonly pubSub: RedisPubSub,
   ) {}
 
   async createAccount({
@@ -60,23 +69,74 @@ export class UsersService {
         email,
       );
 
+      if (
+        termsOfService === false ||
+        outsourcingTheProcessingOfPersonalData === false ||
+        consentToCollectPersonalData === false
+      ) {
+        let message = '';
+
+        if (
+          termsOfService === false &&
+          outsourcingTheProcessingOfPersonalData === false &&
+          consentToCollectPersonalData === false
+        ) {
+          message =
+            '서비스 약관 및 개인정보수집 및 개인정보처리에 대한 확인이 필요합니다.';
+        } else if (
+          termsOfService === false &&
+          outsourcingTheProcessingOfPersonalData === false
+        ) {
+          message = '서비스 약관 및 개인정보처리에 대한 확인이 필요합니다.';
+        } else if (
+          outsourcingTheProcessingOfPersonalData === false &&
+          consentToCollectPersonalData === false
+        ) {
+          message = '개인정보수집 및 개인정보처리에 대한 확인이 필요합니다.';
+        } else if (
+          termsOfService === false &&
+          consentToCollectPersonalData === false
+        ) {
+          message = '서비스 약관 및 개인정보처리에 대한 확인이 필요합니다.';
+        } else if (termsOfService === false) {
+          message = '서비스 약관을 확인해주세요.';
+        } else if (outsourcingTheProcessingOfPersonalData === false) {
+          message = '개인 정보 처리를 수락해주세요.';
+        } else if (consentToCollectPersonalData === false) {
+          message = '개인 데이터 처리를 확인해주세요.';
+        }
+
+        return {
+          ok: false,
+          error: message,
+        };
+      }
+
+      const assignedRole =
+        role === UserRole.Admin ? UserRole.Admin : UserRole.Client;
+
       const userdata = this.users.create({
         userId,
         password,
-        role,
+        role: assignedRole,
         userName,
         address,
-        consentToCollectPersonalData,
-        outsourcingTheProcessingOfPersonalData,
         parish,
         passwordCheakFindWord,
         passwordCheakRole,
         religious,
-        termsOfService,
         email,
       });
+      const savedUser = await this.users.save(userdata);
 
-      await this.users.save(userdata);
+      const userAgreeInfomation = this.userInformationConsents.create({
+        outsourcingTheProcessingOfPersonalData,
+        termsOfService,
+        consentToCollectPersonalData,
+        user: savedUser,
+      });
+
+      await this.userInformationConsents.save(userAgreeInfomation);
 
       return { ok: true };
     } catch (e) {
@@ -129,47 +189,15 @@ export class UsersService {
 
       user.accessHistory = new Date();
 
-      if (user.currentRefreshToken) {
-        const accessToken = this.jwtService.signAccessToken(user.id);
-        const refreshToken = await this.jwtService.refreshTokenVerify(
-          user.currentRefreshToken,
-        );
-        const refreshTokenOptions: CookieOptions = {
-          httpOnly: this.configService.get<boolean>('REFRESHTOKEN_HTTP_ONLY'),
-          sameSite: this.configService.get('REFRESHTOKEN_SAMESITE'),
-          secure: this.configService.get<boolean>('REFRESHTOKEN_SECURE'),
-          maxAge: this.configService.get<number>('REFRESHTOKEN_MAX_AGE'),
-        };
-        req.res.cookie('ndr', refreshToken, refreshTokenOptions);
-
-        await this.users.update(user.id, {
-          numberOfLoginAttempts: 0,
-          accessHistory: user.accessHistory,
-        });
-        return {
-          ok: true,
-          accessToken,
-        };
-      }
-      // Redis에서 기존 세션 정보 삭제
-      /* await this.redis.del(`session:${userId}`); */
-
       const accessToken = this.jwtService.signAccessToken(user.id);
       const refreshToken = this.jwtService.signRefreshToken();
-
-      /*  // Redis에 새 세션 정보 저장
-      await this.redis.set(
-        `session:${userId}`,
-        refreshToken,
-        'EX',
-        this.configService.get<number>('REFRESHTOKEN_MAX_AGE') / 1000,
-      ); */
+      await this.redis.setex(`session:${refreshToken}`, 100, user.id);
 
       await this.users.update(user.id, {
         numberOfLoginAttempts: 0,
-        currentRefreshToken: refreshToken,
         accessHistory: user.accessHistory,
       });
+
       const refreshTokenOptions: CookieOptions = {
         httpOnly: this.configService.get<boolean>('REFRESHTOKEN_HTTP_ONLY'),
         sameSite: this.configService.get('REFRESHTOKEN_SAMESITE'),
@@ -225,21 +253,33 @@ export class UsersService {
     userId,
     password,
     verifyUpdatePassword,
+    selectFindUserQuestion,
+    verifyQuestionAnswer,
   }: UpdateUserPasswordInput): Promise<UpdateUserPasswordOutput> {
+    const ERROR_MESSAGES = {
+      userNotFound: '계정이 존재하지 않습니다. 계정을 생성해주세요.',
+      invalidQuestion: '질문이 올바르지 않습니다.',
+      invalidAnswer: '질문의 답변이 올바르지 않습니다.',
+      passwordMismatch: '비밀번호가 서로 일치하지 않습니다.',
+      updateFailed: '비밀번호 변경을 실패하였습니다.',
+    };
+
     try {
       const user = await this.users.findOne({ where: { userId } });
       if (!user) {
-        return {
-          ok: false,
-          error: '계정이 존재하지 않습니다. 계정을 생성해주세요.',
-        };
+        return { ok: false, error: ERROR_MESSAGES.userNotFound };
+      }
+
+      if (selectFindUserQuestion !== user.passwordCheakRole) {
+        return { ok: false, error: ERROR_MESSAGES.invalidQuestion };
+      }
+
+      if (verifyQuestionAnswer !== user.passwordCheakFindWord) {
+        return { ok: false, error: ERROR_MESSAGES.invalidAnswer };
       }
 
       if (password !== verifyUpdatePassword) {
-        return {
-          ok: false,
-          error: '비밀번호가 서로 일치하지 않습니다.',
-        };
+        return { ok: false, error: ERROR_MESSAGES.passwordMismatch };
       }
 
       user.password = password;
@@ -257,13 +297,11 @@ export class UsersService {
     }
   }
 
-  async findByRefreshToken(refreshToken: string): Promise<User> {
-    return this.users.findOne({
-      where: { currentRefreshToken: refreshToken },
-    });
+  async findByRefreshToken(eigenKey: string) {
+    return this.redis.get(`session:${eigenKey}`);
   }
 
-  async updateRefreshToken(user: User, refreshToken: string): Promise<User> {
+  /* async updateRefreshToken(user: User, refreshToken: string): Promise<User> {
     await this.users.update(user.id, {
       currentRefreshToken: refreshToken,
     });
@@ -271,16 +309,16 @@ export class UsersService {
     const data = await this.users.findOne({ where: { id: user.id } });
 
     return data;
-  }
+  } */
 
   /* refreshToken을 지우기 위한 로직 */
-  async checkRefreshToken(id: number): Promise<User> {
+  /* async checkRefreshToken(id: number): Promise<User> {
     return this.users.findOne({
       where: { id },
       select: { currentRefreshToken: true },
     });
   }
-
+ */
   async logout(
     { id }: User,
     logoutInput: LogoutInput,
@@ -294,9 +332,9 @@ export class UsersService {
         };
       }
 
-      await this.users.update(logoutInput.id, {
+      /* await this.users.update(logoutInput.id, {
         currentRefreshToken: null,
-      });
+      }); */
 
       const refreshTokenOptions: CookieOptions = {
         httpOnly: this.configService.get<boolean>('REFRESHTOKEN_HTTP_ONLY'),
@@ -318,25 +356,8 @@ export class UsersService {
     }
   }
 
-  async logoutMiddleware(id: number): Promise<LogoutOutput> {
-    try {
-      await this.users.update(id, {
-        currentRefreshToken: null,
-      });
-
-      return {
-        ok: true,
-      };
-    } catch {
-      return {
-        ok: false,
-        error: 'Logout is fail',
-      };
-    }
-  }
-
-  @Cron(`* * * 1 12 *`)
-  async befroeDeleteAccountMessage() {
+  @Cron(`* * * * 12 *`)
+  async beforeDeleteAccountMessage() {
     const threeYearsAgo = new Date();
     threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3);
 
@@ -345,15 +366,17 @@ export class UsersService {
         accessHistory: LessThan(threeYearsAgo),
       },
     });
-
     if (accountData.length > 0) {
-      await this.users.remove(accountData);
+      // 모든 사용자에게 데이터 발송
+      await this.pubSub.publish(NEW_DELETE_ACCOUNT_MESSAGE, {
+        sendingDeleteAccountMessage: accountData,
+      });
     } else {
       console.log('삭제할 사용자가 없습니다.');
     }
   }
 
-  @Cron(`* * * 31 12 *`)
+  @Cron(`0 0 0 31 12 *`)
   async deleteAccount() {
     const threeYearsAgo = new Date();
     threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3);

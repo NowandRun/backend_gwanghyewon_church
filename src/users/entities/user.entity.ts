@@ -9,7 +9,8 @@ import { BeforeInsert, BeforeUpdate, Column, Entity } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { InternalServerErrorException } from '@nestjs/common';
-import { IsBoolean, IsEnum, IsNumber, IsString } from 'class-validator';
+import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
+import { v4 as uuidv4 } from 'uuid';
 
 // enum 값을 export로 내보냄: SetMetadata로 사용
 export enum UserRole {
@@ -76,24 +77,22 @@ export class User extends CoreEntity {
   @IsEnum(UserRole)
   role: UserRole;
 
-  @Field((type) => String)
-  @Column({ nullable: true, select: false })
-  @IsString()
-  currentRefreshToken?: string;
-
-  @Field((type) => String)
+  @Field((type) => String, { nullable: true })
   @Column({ nullable: true })
   @IsString()
+  @IsOptional()
   parish?: string;
 
-  @Field((type) => String)
+  @Field((type) => String, { nullable: true })
   @Column({ nullable: true })
   @IsString()
+  @IsOptional()
   religious?: string;
 
-  @Field((type) => String)
+  @Field((type) => String, { nullable: true })
   @Column({ nullable: true })
   @IsString()
+  @IsOptional()
   address?: string;
 
   @Column({ type: 'enum', enum: PasswordCheakRole })
@@ -106,25 +105,11 @@ export class User extends CoreEntity {
   @IsString()
   passwordCheakFindWord: string;
 
-  @Field((type) => Boolean)
-  @Column()
-  @IsBoolean()
-  termsOfService: boolean;
-
-  @Field((type) => Boolean)
-  @Column()
-  @IsBoolean()
-  consentToCollectPersonalData: boolean;
-
-  @Field((type) => Boolean)
-  @Column()
-  @IsBoolean()
-  outsourcingTheProcessingOfPersonalData: boolean;
-
-  @Field((type) => Int)
+  @Field((type) => Int, { nullable: true })
   @Column({ default: 0 })
   @IsNumber()
-  numberOfLoginAttempts: number;
+  @IsOptional()
+  numberOfLoginAttempts?: number;
 
   @Column({ nullable: true })
   @Field((type) => Date)

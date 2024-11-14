@@ -10,8 +10,8 @@ export class JwtService {
   ) {}
 
   // Access token 생성
-  signAccessToken(userId: number): string {
-    return jwt.sign({ id: userId }, this.options.accessTokenPrivateKey, {
+  signAccessToken(id: number): string {
+    return jwt.sign({ id }, this.options.accessTokenPrivateKey, {
       expiresIn: this.options.accessTokenExpiresIn,
     });
   }
@@ -25,12 +25,21 @@ export class JwtService {
 
   /// 토큰 검증
   accessTokenVerify(accessToken: string): any {
-    const accessPayload = jwt.verify(
-      accessToken,
-      this.options.accessTokenPrivateKey,
-    );
-
-    return accessPayload;
+    try {
+      const accessPayload = jwt.verify(
+        accessToken,
+        this.options.accessTokenPrivateKey,
+      );
+      return accessPayload; // 유효한 경우에만 payload 반환
+    } catch (error) {
+      if (error instanceof jwt.TokenExpiredError) {
+        throw new Error('AccessToken Expired.');
+      } else if (error instanceof jwt.JsonWebTokenError) {
+        throw new Error('Not a valid AccessToken.');
+      } else {
+        throw new Error('AccessToken verification failed.');
+      }
+    }
   }
 
   refreshTokenVerify(refreshToken: string): any {
@@ -42,7 +51,13 @@ export class JwtService {
 
       return refreshPayload;
     } catch (error) {
-      throw new Error('Token verification failed');
+      if (error instanceof jwt.TokenExpiredError) {
+        throw new Error('RefreshToken Expired.');
+      } else if (error instanceof jwt.JsonWebTokenError) {
+        throw new Error('Not a valid RefreshToken.');
+      } else {
+        throw new Error('RefreshToken verification failed.');
+      }
     }
   }
 }

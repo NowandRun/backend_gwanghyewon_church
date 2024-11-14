@@ -9,18 +9,24 @@ export class CreateAccountInput extends PickType(User, [
   'role',
   'userName',
   'address',
-  'consentToCollectPersonalData',
-  'outsourcingTheProcessingOfPersonalData',
   'parish',
   'passwordCheakFindWord',
   'passwordCheakRole',
   'religious',
-  'termsOfService',
   'numberOfLoginAttempts',
   'email',
 ]) {
   @Field((type) => String)
   verifyPassword: string;
+
+  @Field((type) => Boolean)
+  consentToCollectPersonalData: boolean;
+
+  @Field((type) => Boolean)
+  outsourcingTheProcessingOfPersonalData: boolean;
+
+  @Field((type) => Boolean)
+  termsOfService: boolean;
 }
 
 @ObjectType()

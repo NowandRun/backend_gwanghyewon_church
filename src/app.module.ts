@@ -22,6 +22,7 @@ import { JwtMiddleware } from './jwt/jwt.middleware';
 import { QnaNotice } from './qna/entities/qna-notice.entity';
 import { ScheduleModule } from '@nestjs/schedule';
 import { RedisModule } from '@liaoliaots/nestjs-redis';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
@@ -46,6 +47,9 @@ import { RedisModule } from '@liaoliaots/nestjs-redis';
         REFRESHTOKEN_SECURE: Joi.boolean().required(),
         REFRESHTOKEN_MAX_AGE: Joi.string().required(),
         REFRESHTOKEN_LOGOUT_MAX_AGE: Joi.number().required(),
+        REDIS_HOST: Joi.string().required(),
+        REDIS_PORT: Joi.string().required(),
+        REDIS_PASSWORD: Joi.string().required(),
       }),
     }),
     TypeOrmModule.forRoot({
@@ -63,28 +67,20 @@ import { RedisModule } from '@liaoliaots/nestjs-redis';
       logging:
         process.env.NODE_ENV !== 'production' &&
         process.env.NODE_ENV !== 'test',
-      entities: [User, Qna, QnaComment, Notice, QnaNotice],
+      autoLoadEntities: true,
     }),
     RedisModule.forRoot({
-      readyLog: true,
+      readyLog: process.env.NODE_ENV !== 'production',
       config: {
-        host: 'localhost',
-        port: 6380,
-        password: 'bitnami',
+        host: process.env.REDIS_HOST,
+        port: +process.env.REDIS_PORT,
+        password: process.env.REDIS_PASSWORD,
       },
     }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       autoSchemaFile: true,
       installSubscriptionHandlers: true,
-      /* subscriptions: {
-        'graphql-ws': {
-          onConnect: () => {
-            console.log('Client connected');
-            return {};
-          },
-        },
-      }, */
       context: ({ req, res, connection }) => {
         return {
           req,
@@ -103,6 +99,7 @@ import { RedisModule } from '@liaoliaots/nestjs-redis';
     AuthModule,
     QnaModule,
     NoticeModule,
+    CommonModule,
   ],
   controllers: [],
   providers: [ConfigService],

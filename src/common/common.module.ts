@@ -12,5 +12,6 @@ const pubsub = new PubSub();
       useValue: pubsub,
     },
   ],
+  exports: [PUB_SUB],
 })
 export class CommonModule {}

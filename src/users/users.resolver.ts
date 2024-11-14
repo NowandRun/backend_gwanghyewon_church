@@ -17,14 +17,17 @@ import {
   UpdateUserPasswordInput,
   UpdateUserPasswordOutput,
 } from './dtos/update-user-password.dto';
-import { PUB_SUB } from 'src/common/common.constants';
-import { PubSub } from 'graphql-subscriptions';
+import {
+  NEW_DELETE_ACCOUNT_MESSAGE,
+  PUB_SUB,
+} from 'src/common/common.constants';
+import { RedisPubSub } from 'graphql-redis-subscriptions';
 
 @Resolver((of) => User)
 export class UsersResolver {
   constructor(
     private readonly userService: UsersService,
-    @Inject(PUB_SUB) private readonly pubsub: PubSub,
+    @Inject(PUB_SUB) private readonly pubSub: RedisPubSub,
   ) {}
 
   @Mutation((returns) => CreateAccountOutput)
@@ -80,16 +83,8 @@ export class UsersResolver {
     return this.userService.logout(authUser, logoutInput, req);
   }
 
-  @Mutation((returns) => Boolean)
-  potatoReady() {
-    pubsub.publish('hotPotatos', {
-      readyPotatos: 'Your potato is ready. love you',
-    });
-    return true;
-  }
-
-  @Subscription((returns) => String)
-  readyPotatos() {
-    return pubsub.asyncIterator('hotPotatos');
+  @Subscription((returns) => User)
+  sendingDeleteAccountMessage() {
+    return this.pubSub.asyncIterator(NEW_DELETE_ACCOUNT_MESSAGE);
   }
 }
