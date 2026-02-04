@@ -14,35 +14,25 @@ import { v4 as uuidv4 } from 'uuid';
 
 // enum 값을 export로 내보냄: SetMetadata로 사용
 export enum UserRole {
+  SuperAdmin = 'SuperAdmin',
   Admin = 'Admin',
   Client = 'Client',
 }
 
 export enum PasswordCheakRole {
-  A = 'A',
-  B = 'B',
-  C = 'C',
-  D = 'D',
-  E = 'E',
-  F = 'F',
-  G = 'G',
-  H = 'H',
-  I = 'I',
-  J = 'J',
-  K = 'K',
-  L = 'L',
-  M = 'M',
-  N = 'N',
-  O = 'O',
-  P = 'P',
-  Q = 'Q',
-  R = 'R',
-  S = 'S',
-  T = 'T',
-  U = 'U',
-  V = 'V',
-  W = 'W',
-  X = 'X',
+  A = '보물 1호는?',
+  B = '첫 애완동물 이름은?',
+  C = '출생지는?',
+  D = '어머니 성함은?',
+  E = '아버지 성함은?',
+  F = '초등학교 이름은?',
+  G = '중학교 이름은?',
+  H = '고등학교 이름은?',
+  I = '대학 이름은?',
+  J = '첫 직장 이름은?',
+  K = '첫 자동차 모델은?',
+  L = '인생 좌우명은?',
+  M = '첫번째 가장 큰 목표는?',
 }
 
 registerEnumType(UserRole, { name: 'UserRole' });
@@ -57,23 +47,32 @@ export class User extends CoreEntity {
   @IsString()
   userId: string;
 
-  @Column()
+  /* @Column()
   @Field((type) => String)
   @IsString()
-  email: string;
+  email: string; */
 
   @Column({ select: false })
   @Field((type) => String)
   @IsString()
   password: string;
 
+  @Column({ unique: true })
+  @Field((type) => String)
+  @IsString()
+  nickname: string;
+
   @Field((type) => String, { nullable: true })
   @Column()
   @IsString()
   userName?: string;
 
-  @Column({ type: 'enum', enum: UserRole, default: UserRole.Client })
-  @Field((type) => UserRole)
+  @Column({
+    type: 'enum',
+    enum: UserRole,
+    default: UserRole.Client,
+  })
+  @Field(() => UserRole)
   @IsEnum(UserRole)
   role: UserRole;
 

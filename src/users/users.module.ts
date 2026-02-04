@@ -5,13 +5,14 @@ import { UsersResolver } from './users.resolver';
 import { UsersService } from './users.service';
 import { ConfigModule } from '@nestjs/config';
 import { UserInformationConsent } from './entities/user-information-consent.entity';
+import { AdminSeedService } from './adminModuleInit.service';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User, UserInformationConsent]),
     ConfigModule,
   ],
-  providers: [UsersResolver, UsersService],
+  providers: [UsersResolver, UsersService, AdminSeedService],
   exports: [UsersService],
 })
 export class UsersModule {}

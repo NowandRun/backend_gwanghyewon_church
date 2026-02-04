@@ -1,29 +1,25 @@
 import { InjectRepository } from '@nestjs/typeorm';
-import { Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { LessThan, Repository } from 'typeorm';
 import {
   CreateAccountInput,
   CreateAccountOutput,
+  CreateAdminInput,
 } from './dtos/create-account.dto';
 import { LoginInput, LoginOutput } from './dtos/login.dto';
 import { PasswordCheakRole, User, UserRole } from './entities/user.entity';
 import { JwtService } from 'src/jwt/jwt.service';
 import { UserProfileOutput } from './dtos/user-profile.dto';
-import { LogoutInput, LogoutOutput } from './dtos/logout.dto';
-import { CookieOptions } from 'express';
+import { LogoutOutput } from './dtos/logout.dto';
 import { ConfigService } from '@nestjs/config';
 import { FindUserIdInput, FindUserIdOutput } from './dtos/find-user-id.dto';
 import {
   UpdateUserPasswordInput,
   UpdateUserPasswordOutput,
 } from './dtos/update-user-password.dto';
-import { Cron } from '@nestjs/schedule';
 import { InjectRedis } from '@liaoliaots/nestjs-redis';
 import { Redis } from 'ioredis';
-import {
-  NEW_DELETE_ACCOUNT_MESSAGE,
-  PUB_SUB,
-} from 'src/common/common.constants';
+import { PUB_SUB } from 'src/common/common.constants';
 import { RedisPubSub } from 'graphql-redis-subscriptions';
 import { UserInformationConsent } from './entities/user-information-consent.entity';
 
@@ -35,7 +31,6 @@ export class UsersService {
     private readonly userInformationConsents: Repository<UserInformationConsent>,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    @InjectRedis() private readonly redis: Redis,
     @Inject(PUB_SUB) private readonly pubSub: RedisPubSub,
   ) {}
 
@@ -43,7 +38,6 @@ export class UsersService {
     userId,
     userName,
     password,
-    role,
     consentToCollectPersonalData,
     outsourcingTheProcessingOfPersonalData,
     passwordCheakFindWord,
@@ -53,7 +47,8 @@ export class UsersService {
     parish,
     religious,
     verifyPassword,
-    email,
+    nickname,
+    /* email, */
   }: CreateAccountInput): Promise<CreateAccountOutput> {
     try {
       await this.canMakeAccount(
@@ -66,7 +61,8 @@ export class UsersService {
         passwordCheakRole,
         termsOfService,
         verifyPassword,
-        email,
+        nickname,
+        /* email, */
       );
 
       if (
@@ -112,20 +108,17 @@ export class UsersService {
         };
       }
 
-      const assignedRole =
-        role === UserRole.Admin ? UserRole.Admin : UserRole.Client;
-
       const userdata = this.users.create({
         userId,
         password,
-        role: assignedRole,
         userName,
         address,
         parish,
         passwordCheakFindWord,
         passwordCheakRole,
         religious,
-        email,
+        nickname,
+        /* email, */
       });
       const savedUser = await this.users.save(userdata);
 
@@ -147,11 +140,32 @@ export class UsersService {
     }
   }
 
-  async login({ userId, password }: LoginInput, req): Promise<LoginOutput> {
+  async createAdminAccount(
+    superAdmin: User,
+    input: CreateAdminInput,
+  ): Promise<CreateAccountOutput> {
+    if (superAdmin.role !== UserRole.SuperAdmin) {
+      return {
+        ok: false,
+        error: '슈퍼 관리자만 관리자 계정을 생성할 수 있습니다.',
+      };
+    }
+
+    const user = this.users.create({
+      ...input,
+      role: UserRole.Admin,
+    });
+
+    await this.users.save(user);
+
+    return { ok: true };
+  }
+
+  async login({ userId, password }: LoginInput): Promise<LoginOutput> {
     try {
       const user = await this.users.findOne({
         where: { userId },
-        select: ['id', 'password'],
+        select: ['id', 'password', 'numberOfLoginAttempts'],
       });
 
       if (!user) {
@@ -165,50 +179,58 @@ export class UsersService {
         };
       }
 
+      if (user.numberOfLoginAttempts >= 5) {
+        return {
+          ok: false,
+          error: '로그인 횟수가 초과되었습니다. 계정 찾기를 시도해주세요.',
+        };
+      }
+
       const passwordCorrect = await user.checkPassword(password);
 
       if (!passwordCorrect) {
-        if (user.numberOfLoginAttempts >= 5) {
+        // atomic increment
+        await this.users.increment({ id: user.id }, 'numberOfLoginAttempts', 1);
+
+        // fetch the updated value (optional, to return in message)
+        const updated = await this.users.findOne({
+          where: { id: user.id },
+          select: ['numberOfLoginAttempts'],
+        });
+
+        const attempts = updated?.numberOfLoginAttempts ?? 0;
+        if (attempts >= 5) {
           return {
             ok: false,
             error: '로그인 횟수가 초과되었습니다. 계정 찾기를 시도해주세요.',
           };
         }
 
-        user.numberOfLoginAttempts += 1;
-
-        await this.users.update(user.id, {
-          numberOfLoginAttempts: user.numberOfLoginAttempts,
-        });
-
         return {
           ok: false,
-          error: `계정로그인에 실패하였습니다.(${user.numberOfLoginAttempts}/5)`,
+          error: `계정로그인에 실패하였습니다.(${attempts}/5)`,
         };
       }
 
       user.accessHistory = new Date();
 
-      const accessToken = this.jwtService.signAccessToken(user.id);
-      const refreshToken = this.jwtService.signRefreshToken();
-      await this.redis.setex(`session:${refreshToken}`, 100, user.id);
+      const token = this.jwtService.sign(user.id);
 
       await this.users.update(user.id, {
         numberOfLoginAttempts: 0,
         accessHistory: user.accessHistory,
       });
 
-      const refreshTokenOptions: CookieOptions = {
+      /* const refreshTokenOptions: CookieOptions = {
         httpOnly: this.configService.get<boolean>('REFRESHTOKEN_HTTP_ONLY'),
         sameSite: this.configService.get('REFRESHTOKEN_SAMESITE'),
         secure: this.configService.get<boolean>('REFRESHTOKEN_SECURE'),
         maxAge: this.configService.get<number>('REFRESHTOKEN_MAX_AGE'),
       };
-
-      req.res.cookie('ndr', refreshToken, refreshTokenOptions);
+ */
       return {
         ok: true,
-        accessToken,
+        token,
       };
     } catch (error) {
       console.log(error);
@@ -232,11 +254,13 @@ export class UsersService {
   }
 
   async findByUserId({
-    email,
+    /* email, */
     userName,
   }: FindUserIdInput): Promise<FindUserIdOutput> {
     try {
-      const user = await this.users.findOne({ where: { email, userName } });
+      const user = await this.users.findOne({
+        where: { /* email, */ userName },
+      });
       return {
         ok: true,
         userId: user.userId,
@@ -283,6 +307,7 @@ export class UsersService {
       }
 
       user.password = password;
+      user.numberOfLoginAttempts = 0;
 
       await this.users.save(user);
 
@@ -295,10 +320,6 @@ export class UsersService {
         error: '비밀번호 변경을 실패하였습니다.',
       };
     }
-  }
-
-  async findByRefreshToken(eigenKey: string) {
-    return this.redis.get(`session:${eigenKey}`);
   }
 
   /* async updateRefreshToken(user: User, refreshToken: string): Promise<User> {
@@ -319,44 +340,8 @@ export class UsersService {
     });
   }
  */
-  async logout(
-    { id }: User,
-    logoutInput: LogoutInput,
-    req,
-  ): Promise<LogoutOutput> {
-    try {
-      if (id === logoutInput.id) {
-        return {
-          ok: false,
-          error: '해당 사용자는 logout을 할 수 없습니다.',
-        };
-      }
 
-      /* await this.users.update(logoutInput.id, {
-        currentRefreshToken: null,
-      }); */
-
-      const refreshTokenOptions: CookieOptions = {
-        httpOnly: this.configService.get<boolean>('REFRESHTOKEN_HTTP_ONLY'),
-        sameSite: this.configService.get('REFRESHTOKEN_SAMESITE'),
-        secure: this.configService.get<boolean>('REFRESHTOKEN_SECURE'),
-        maxAge: this.configService.get<number>('REFRESHTOKEN_LOGOUT_MAX_AGE'),
-      };
-
-      req.res.cookie('ndr', '', refreshTokenOptions);
-
-      return {
-        ok: true,
-      };
-    } catch {
-      return {
-        ok: false,
-        error: 'Logout is fail',
-      };
-    }
-  }
-
-  @Cron(`* * * * 12 *`)
+  /* @Cron(`* * * * 12 *`)
   async beforeDeleteAccountMessage() {
     const threeYearsAgo = new Date();
     threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3);
@@ -374,9 +359,9 @@ export class UsersService {
     } else {
       console.log('삭제할 사용자가 없습니다.');
     }
-  }
+  } */
 
-  @Cron(`0 0 0 31 12 *`)
+  /* @Cron(`0 0 0 31 12 *`)
   async deleteAccount() {
     const threeYearsAgo = new Date();
     threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3);
@@ -392,7 +377,7 @@ export class UsersService {
     } else {
       console.log('삭제할 사용자가 없습니다.');
     }
-  }
+  } */
 
   async canMakeAccount(
     userId: string,
@@ -404,13 +389,18 @@ export class UsersService {
     passwordCheakRole: PasswordCheakRole,
     termsOfService: boolean,
     verifyPassword: string,
-    email: string,
+    nickname: string,
+    /* email: string, */
   ): Promise<CreateAccountOutput> {
-    const exists = await this.users.findOne({
+    const idExists = await this.users.findOne({
       where: { userId },
     });
 
-    if (exists) {
+    const nicknameExists = await this.users.findOne({
+      where: { nickname },
+    });
+
+    if (idExists) {
       // make error
       return { ok: false, error: '이미 존재하는 아이디입니다.' };
     }
@@ -419,14 +409,24 @@ export class UsersService {
       return { ok: false, error: '사용하실 아이디를 입력해주세요.' };
     }
 
-    if (!email) {
+    /* if (!email) {
       return { ok: false, error: '이메일을 입력해주세요.' };
-    }
+    } */
 
     if (!userName) {
       // make error
       return { ok: false, error: '이름을 입력해주세요.' };
     }
+
+    if (!nickname) {
+      // make error
+      return { ok: false, error: '게시판 명을 입력해주세요.' };
+    }
+
+    if (nicknameExists) {
+      throw new BadRequestException('이미 사용 중인 닉네임입니다.');
+    }
+
     if (!password) {
       // make error
       return { ok: false, error: '비밀번호를 입력해주세요.' };

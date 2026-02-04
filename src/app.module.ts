@@ -10,19 +10,13 @@ import { UsersModule } from './users/users.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as Joi from 'joi';
-import { User } from './users/entities/user.entity';
 import { JwtModule } from './jwt/jwt.module';
 import { AuthModule } from './auth/auth.module';
-import { QnaModule } from './qna/qnas.module';
-import { Qna } from './qna/entities/qna.entity';
-import { QnaComment } from './qna/entities/qna-comment.entity';
-import { Notice } from './notice/entities/notice.entity';
-import { NoticeModule } from './notice/notices.module';
-import { JwtMiddleware } from './jwt/jwt.middleware';
-import { QnaNotice } from './qna/entities/qna-notice.entity';
 import { ScheduleModule } from '@nestjs/schedule';
-import { RedisModule } from '@liaoliaots/nestjs-redis';
 import { CommonModule } from './common/common.module';
+/* import { RedisModule } from '@liaoliaots/nestjs-redis'; */
+import { UploadsModule } from './uploads/uploads.module';
+import { CharchInformationBoardsModule } from './charchInformation/charchinformationboard.module';
 
 @Module({
   imports: [
@@ -37,19 +31,18 @@ import { CommonModule } from './common/common.module';
         DB_USERNAME: Joi.string().required(),
         DB_NAME: Joi.string(),
         DB_PASSWORD: Joi.string(),
-        REFRESHTOKEN_PRIVATE_KEY: Joi.string().required(),
-        ACCESSTOKEN_PRIVATE_KEY: Joi.string().required(),
-        ACCESSTOKEN_EXPIRESIN: Joi.string().required(),
-        REFRESHTOKEN_EXPIRESIN: Joi.string().required(),
         BCRYPT_SALT_ROUNDS: Joi.number().default(10),
-        REFRESHTOKEN_HTTP_ONLY: Joi.boolean().required(),
-        REFRESHTOKEN_SAMESITE: Joi.required(),
-        REFRESHTOKEN_SECURE: Joi.boolean().required(),
-        REFRESHTOKEN_MAX_AGE: Joi.string().required(),
-        REFRESHTOKEN_LOGOUT_MAX_AGE: Joi.number().required(),
+        PRIVATE_KEY: Joi.string().required(),
+        PRIVATE_KEY_EXPIRES_IN: Joi.string().required(),
         REDIS_HOST: Joi.string().required(),
         REDIS_PORT: Joi.string().required(),
-        REDIS_PASSWORD: Joi.string().required(),
+        REDIS_PASSWORD: Joi.string().allow('').optional(),
+
+        // AWS S3 ✅
+        AWS_REGION: Joi.string().required(),
+        AWS_BUCKET: Joi.string().required(),
+        AWS_ACCESS_KEY_ID: Joi.string().required(),
+        AWS_SECRET_ACCESS_KEY: Joi.string().required(),
       }),
     }),
     TypeOrmModule.forRoot({
@@ -69,45 +62,48 @@ import { CommonModule } from './common/common.module';
         process.env.NODE_ENV !== 'test',
       autoLoadEntities: true,
     }),
-    RedisModule.forRoot({
+    /*  RedisModule.forRoot({
       readyLog: process.env.NODE_ENV !== 'production',
       config: {
         host: process.env.REDIS_HOST,
         port: +process.env.REDIS_PORT,
-        password: process.env.REDIS_PASSWORD,
+        password:
+          process.env.REDIS_PASSWORD && process.env.REDIS_PASSWORD.length > 0
+            ? process.env.REDIS_PASSWORD
+            : undefined,
       },
-    }),
+    }), */
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       autoSchemaFile: true,
       installSubscriptionHandlers: true,
-      context: ({ req, res, connection }) => {
-        return {
-          req,
-          res,
-        };
+      // Http 통신시 사용
+      context: ({ req, extra }) => {
+        return { token: req ? req.headers['x-jwt'] : extra.token };
       },
     }),
     ScheduleModule.forRoot(),
     JwtModule.forRoot({
-      accessTokenPrivateKey: process.env.ACCESSTOKEN_PRIVATE_KEY,
-      refreshTokenPrivateKey: process.env.REFRESHTOKEN_PRIVATE_KEY,
-      accessTokenExpiresIn: process.env.ACCESSTOKEN_EXPIRESIN,
-      refreshTokenExpiresIn: process.env.REFRESHTOKEN_EXPIRESIN,
+      privateKey: process.env.PRIVATE_KEY,
+      privateKeyExpiresIn: process.env.PRIVATE_KEY_EXPIRES_IN,
     }),
+
+    UploadsModule.forRoot({
+      bucket: process.env.AWS_BUCKET!,
+      region: process.env.AWS_REGION!,
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+    }),
+
     UsersModule,
     AuthModule,
-    QnaModule,
-    NoticeModule,
+    /*     QnaModule,
+    NoticeModule, */
     CommonModule,
+    UploadsModule,
+    CharchInformationBoardsModule,
   ],
   controllers: [],
   providers: [ConfigService],
 })
-export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(JwtMiddleware)
-      .forRoutes({ path: '/graphql', method: RequestMethod.POST });
-  }
-}
+export class AppModule {}

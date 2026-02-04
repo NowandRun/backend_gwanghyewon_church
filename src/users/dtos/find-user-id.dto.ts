@@ -3,7 +3,9 @@ import { CoreOutput } from 'src/common/dtos/output.dto';
 import { User } from '../entities/user.entity';
 
 @InputType()
-export class FindUserIdInput extends PickType(User, ['email', 'userName']) {}
+export class FindUserIdInput extends PickType(User, [
+  /* 'email', */ 'userName',
+]) {}
 
 @ObjectType()
 export class FindUserIdOutput extends CoreOutput {

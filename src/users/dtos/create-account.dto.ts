@@ -1,32 +1,41 @@
 import { Field, InputType, ObjectType, PickType } from '@nestjs/graphql';
-import { User } from '../entities/user.entity';
+import { User, UserRole } from '../entities/user.entity';
 import { CoreOutput } from 'src/common/dtos/output.dto';
 
 @InputType()
 export class CreateAccountInput extends PickType(User, [
   'userId',
   'password',
-  'role',
+  'nickname',
   'userName',
   'address',
   'parish',
+  'religious',
   'passwordCheakFindWord',
   'passwordCheakRole',
-  'religious',
-  'numberOfLoginAttempts',
-  'email',
 ]) {
-  @Field((type) => String)
+  @Field(() => String)
   verifyPassword: string;
 
-  @Field((type) => Boolean)
+  @Field(() => Boolean)
+  termsOfService: boolean;
+
+  @Field(() => Boolean)
   consentToCollectPersonalData: boolean;
 
-  @Field((type) => Boolean)
+  @Field(() => Boolean)
   outsourcingTheProcessingOfPersonalData: boolean;
+}
 
-  @Field((type) => Boolean)
-  termsOfService: boolean;
+@InputType()
+export class CreateAdminInput extends PickType(User, [
+  'userId',
+  'password',
+  'nickname',
+  'userName',
+]) {
+  @Field(() => UserRole)
+  role: UserRole;
 }
 
 @ObjectType()

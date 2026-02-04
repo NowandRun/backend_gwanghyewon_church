@@ -1,17 +1,18 @@
 import { UsersService } from './users.service';
 import { LoginInput, LoginOutput } from './dtos/login.dto';
-import { User } from './entities/user.entity';
+import { User, UserRole } from './entities/user.entity';
 import {
   CreateAccountInput,
   CreateAccountOutput,
+  CreateAdminInput,
 } from './dtos/create-account.dto';
 import { Args, Mutation, Resolver, Query, Subscription } from '@nestjs/graphql';
 import { UserProfileInput, UserProfileOutput } from './dtos/user-profile.dto';
 import { Role } from 'src/auth/role.decorator';
 import { AuthUser } from 'src/auth/auth-user.decorator';
-import { LogoutInput, LogoutOutput } from './dtos/logout.dto';
+import { LogoutOutput } from './dtos/logout.dto';
 import { Request } from 'express';
-import { Inject, Res } from '@nestjs/common';
+import { Inject, Res, UseGuards } from '@nestjs/common';
 import { FindUserIdInput, FindUserIdOutput } from './dtos/find-user-id.dto';
 import {
   UpdateUserPasswordInput,
@@ -22,6 +23,7 @@ import {
   PUB_SUB,
 } from 'src/common/common.constants';
 import { RedisPubSub } from 'graphql-redis-subscriptions';
+import { RolesAuthGuard } from 'src/auth/auth.guard';
 
 @Resolver((of) => User)
 export class UsersResolver {
@@ -37,12 +39,19 @@ export class UsersResolver {
     return this.userService.createAccount(createAccountInput);
   }
 
+  /* @UseGuards(RolesAuthGuard) */
+  @Role(['SuperAdmin']) // 사용자에 따른 접근 제어
+  @Mutation(() => CreateAccountOutput)
+  createAdmin(
+    @AuthUser() superAdmin: User,
+    @Args('input') createAdminInput: CreateAdminInput,
+  ): Promise<CreateAccountOutput> {
+    return this.userService.createAdminAccount(superAdmin, createAdminInput);
+  }
+
   @Mutation((returns) => LoginOutput)
-  login(
-    @Args('input') loginInput: LoginInput,
-    @Res({ passthrough: true }) req: Request,
-  ): Promise<LoginOutput> {
-    return this.userService.login(loginInput, req);
+  login(@Args('input') loginInput: LoginInput): Promise<LoginOutput> {
+    return this.userService.login(loginInput);
   }
 
   @Query((returns) => FindUserIdOutput)
@@ -73,14 +82,11 @@ export class UsersResolver {
     return this.userService.findById(userProfileInput.userId);
   }
 
-  @Mutation((returns) => LogoutOutput)
-  @Role(['Any'])
-  async logout(
-    @AuthUser() authUser: User,
-    @Args('input') logoutInput: LogoutInput,
-    @Res({ passthrough: true }) req: Request,
-  ): Promise<LogoutOutput> {
-    return this.userService.logout(authUser, logoutInput, req);
+  @Mutation(() => LogoutOutput)
+  logout() {
+    return {
+      ok: true,
+    };
   }
 
   @Subscription((returns) => User)

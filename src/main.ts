@@ -1,32 +1,16 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
-  const allowedOrigins = [
-    'http://localhost:3000',
-    'https://wavenexus.co.kr',
-    'https://www.wavenexus.co.kr',
-    'http://frontend:3000',
-    'https://frontend:3000',
-    'http://nginx',
-    'https://nginx',
-  ];
-
   const app = await NestFactory.create(AppModule);
   const corsOptions = {
-    origin: allowedOrigins,
+    origin: true,
     credentials: true,
-    methods: 'GET,HEAD,POST',
-    allowedHeaders: 'Content-Type,Authorization',
-    exposedHeaders: 'Authorization',
   };
   app.useGlobalPipes(new ValidationPipe());
   // Cors policy 해결
   app.enableCors(corsOptions);
-  app.use(cookieParser());
-
   await app.listen(process.env.PORT || 4000);
 }
 bootstrap();
