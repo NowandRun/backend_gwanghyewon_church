@@ -15,8 +15,9 @@ import { AuthModule } from './auth/auth.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CommonModule } from './common/common.module';
 /* import { RedisModule } from '@liaoliaots/nestjs-redis'; */
-import { UploadsModule } from './uploads/uploads.module';
 import { CharchInformationBoardsModule } from './charchInformation/charchinformationboard.module';
+import { UploadsModule } from './uploads/uploads.module';
+import GraphQLJSON from 'graphql-type-json';
 
 @Module({
   imports: [
@@ -77,6 +78,7 @@ import { CharchInformationBoardsModule } from './charchInformation/charchinforma
       driver: ApolloDriver,
       autoSchemaFile: true,
       installSubscriptionHandlers: true,
+      resolvers: { JSON: GraphQLJSON },
       // Http 통신시 사용
       context: ({ req, extra }) => {
         return { token: req ? req.headers['x-jwt'] : extra.token };
@@ -88,11 +90,15 @@ import { CharchInformationBoardsModule } from './charchInformation/charchinforma
       privateKeyExpiresIn: process.env.PRIVATE_KEY_EXPIRES_IN,
     }),
 
-    UploadsModule.forRoot({
-      bucket: process.env.AWS_BUCKET!,
-      region: process.env.AWS_REGION!,
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+    UploadsModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (config: ConfigService) => ({
+        bucket: config.get('AWS_BUCKET'),
+        region: config.get('AWS_REGION'),
+        accessKeyId: config.get('AWS_ACCESS_KEY_ID'),
+        secretAccessKey: config.get('AWS_SECRET_ACCESS_KEY'),
+      }),
+      inject: [ConfigService],
     }),
 
     UsersModule,
@@ -100,7 +106,6 @@ import { CharchInformationBoardsModule } from './charchInformation/charchinforma
     /*     QnaModule,
     NoticeModule, */
     CommonModule,
-    UploadsModule,
     CharchInformationBoardsModule,
   ],
   controllers: [],

@@ -1,14 +1,11 @@
-// boards/boards.service.ts
+// boards/boards.service.ts (또는 charchinformation.service.ts)
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CharchInformationBoard } from './entities/charchinformationboard.entity';
-import { CreateCharchInformationBoardDto } from './dto/create-charchinformationboard.dto';
-import { Args, Mutation } from '@nestjs/graphql';
 import { CoreOutput } from 'src/common/dtos/output.dto';
-import { Role } from 'src/auth/role.decorator';
-import { AuthUser } from 'src/auth/auth-user.decorator';
 import { User } from 'src/users/entities/user.entity';
+import { CreateCharchInformationBoardDto } from './dto/create-charchinformationboard.dto';
 
 @Injectable()
 export class CharchInformationBoardsService {
@@ -21,14 +18,20 @@ export class CharchInformationBoardsService {
     user: User,
     dto: CreateCharchInformationBoardDto,
   ): Promise<CoreOutput> {
-    const board = this.boardRepo.create({
-      ...dto,
-      author: user.nickname,
-    });
+    try {
+      const board = this.boardRepo.create({
+        title: dto.title,
+        author: user.nickname,
+        blocks: dto.blocks, // ✅ dto.content 대신 dto.blocks 사용
+        thumbnailUrl: dto.thumbnailUrl ?? null,
+      });
 
-    await this.boardRepo.save(board);
-
-    return { ok: true };
+      await this.boardRepo.save(board);
+      return { ok: true };
+    } catch (error) {
+      console.error('저장 에러:', error);
+      return { ok: false, error: '게시글 저장 실패' };
+    }
   }
 
   findAllCharchInformationBoards() {

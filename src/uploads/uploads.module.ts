@@ -1,24 +1,36 @@
-import { DynamicModule, Global, Module } from '@nestjs/common';
-import { CONFIG_OPTIONS } from 'src/common/common.constants';
-import { UploadModuleOptions } from './uploads.interface';
-import { UploadsController } from './uploads.controller';
+// src/uploads/uploads.module.ts
+
+import { DynamicModule, Module } from '@nestjs/common';
 import { UploadsService } from './uploads.service';
+import { UploadsController } from './uploads.controller';
+
+export interface UploadsModuleOptions {
+  bucket: string;
+  region: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+}
 
 @Module({})
-@Global()
 export class UploadsModule {
-  static forRoot(options: UploadModuleOptions): DynamicModule {
+  static forRootAsync(options: {
+    imports?: any[];
+    useFactory: (...args: any[]) => UploadsModuleOptions;
+    inject?: any[];
+  }): DynamicModule {
     return {
       module: UploadsModule,
-      controllers: [UploadsController],
+      imports: options.imports,
+      controllers: [UploadsController], // 👈 이거 추가
       providers: [
         {
-          provide: CONFIG_OPTIONS,
-          useValue: options,
+          provide: 'UPLOADS_OPTIONS',
+          useFactory: options.useFactory,
+          inject: options.inject || [],
         },
-        UploadsService, // ⭐ 반드시 필요
+        UploadsService,
       ],
-      exports: [UploadsService], // 다른 모듈에서 쓸 수 있게
+      exports: [UploadsService],
     };
   }
 }

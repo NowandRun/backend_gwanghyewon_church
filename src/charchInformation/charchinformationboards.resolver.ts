@@ -21,7 +21,9 @@ export class CharchInformationBoardsResolver {
     return this.boardsService.createCharchInformationBoard(user, dto);
   }
 
-  @Query(() => [CharchInformationBoard])
+  @Query(() => [CharchInformationBoard], {
+    name: 'findAllCharchInformationBoards',
+  })
   findAll() {
     return this.boardsService.findAllCharchInformationBoards();
   }

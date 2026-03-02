@@ -1,20 +1,18 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-import { CONFIG_OPTIONS } from 'src/common/common.constants';
-import { UploadModuleOptions } from './uploads.interface';
 import { BoardType } from './board-type.enum';
-import { Express } from 'express';
 import { extname } from 'path';
 import { v4 as uuid } from 'uuid';
 import * as dayjs from 'dayjs';
+import { UploadsModuleOptions } from './uploads.module';
 
 @Injectable()
 export class UploadsService {
   private readonly s3: S3Client;
 
   constructor(
-    @Inject(CONFIG_OPTIONS)
-    private readonly options: UploadModuleOptions,
+    @Inject('UPLOADS_OPTIONS')
+    private readonly options: UploadsModuleOptions,
   ) {
     this.s3 = new S3Client({
       region: options.region,
