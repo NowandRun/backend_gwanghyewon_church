@@ -1,6 +1,6 @@
 // src/uploads/uploads.module.ts
 
-import { DynamicModule, Module } from '@nestjs/common';
+import { DynamicModule, Global, Module } from '@nestjs/common';
 import { UploadsService } from './uploads.service';
 import { UploadsController } from './uploads.controller';
 
@@ -11,6 +11,7 @@ export interface UploadsModuleOptions {
   secretAccessKey: string;
 }
 
+@Global()
 @Module({})
 export class UploadsModule {
   static forRootAsync(options: {
@@ -19,6 +20,7 @@ export class UploadsModule {
     inject?: any[];
   }): DynamicModule {
     return {
+      global: true,
       module: UploadsModule,
       imports: options.imports,
       controllers: [UploadsController], // 👈 이거 추가

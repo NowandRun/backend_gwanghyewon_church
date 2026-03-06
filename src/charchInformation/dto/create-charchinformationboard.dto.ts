@@ -1,5 +1,5 @@
 import { Field, InputType } from '@nestjs/graphql';
-import { IsNotEmpty, IsString, IsDefined } from 'class-validator'; // ✅ IsDefined 추가
+import { IsNotEmpty, IsString, IsDefined, IsOptional } from 'class-validator'; // ✅ IsDefined 추가
 import GraphQLJSON from 'graphql-type-json';
 
 @InputType()
@@ -14,7 +14,7 @@ export class CreateCharchInformationBoardDto {
   blocks: any;
 
   @IsString()
-  @IsNotEmpty() // ✅ 썸네일도 스키마상 필수(String!)이므로 체크 필요
-  @Field()
-  thumbnailUrl: string;
+  @IsOptional() // ✅ IsNotEmpty 대신 IsOptional로 변경 (썸네일이 없을 수도 있음)
+  @Field({ nullable: true }) // ✅ Null 허용
+  thumbnailUrl?: string;
 }
