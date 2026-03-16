@@ -5,12 +5,14 @@ import {
   ObjectType,
   registerEnumType,
 } from '@nestjs/graphql';
-import { BeforeInsert, BeforeUpdate, Column, Entity } from 'typeorm';
+import { BeforeInsert, BeforeUpdate, Column, Entity, OneToMany } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { InternalServerErrorException } from '@nestjs/common';
 import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
-import { v4 as uuidv4 } from 'uuid';
+import { ChurchInformationBoard } from 'src/churchInformation/entities/churchInformationBoard.entity';
+import { ChurchAlbumBoard } from 'src/churchAlbum/entities/churchAlbumBoard.entity';
+import { ChurchBulletinBoard } from 'src/churchBulletin/entities/churchBulletinBoard.entity';
 
 // enum 값을 export로 내보냄: SetMetadata로 사용
 export enum UserRole {
@@ -113,6 +115,19 @@ export class User extends CoreEntity {
   @Column({ nullable: true })
   @Field((type) => Date)
   accessHistory?: Date;
+
+  // 🚀 이 부분을 추가해야 합니다.
+  @OneToMany(() => ChurchInformationBoard, (board) => board.user)
+  @Field(() => [ChurchInformationBoard], { nullable: true })
+  churchInformationBoard: ChurchInformationBoard[];
+
+  @OneToMany(() => ChurchAlbumBoard, (board) => board.user)
+  @Field(() => [ChurchAlbumBoard], { nullable: true })
+  churchAlbumBoard: ChurchAlbumBoard[];
+
+  @OneToMany(() => ChurchBulletinBoard, (board) => board.user)
+  @Field(() => [ChurchBulletinBoard], { nullable: true })
+  churchBulletinBoard: ChurchBulletinBoard[];
 
   @BeforeInsert()
   @BeforeUpdate()

@@ -1,6 +1,6 @@
 import { InjectRepository } from '@nestjs/typeorm';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { LessThan, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import {
   CreateAccountInput,
   CreateAccountOutput,
@@ -10,15 +10,12 @@ import { LoginInput, LoginOutput } from './dtos/login.dto';
 import { PasswordCheakRole, User, UserRole } from './entities/user.entity';
 import { JwtService } from 'src/jwt/jwt.service';
 import { UserProfileOutput } from './dtos/user-profile.dto';
-import { LogoutOutput } from './dtos/logout.dto';
 import { ConfigService } from '@nestjs/config';
 import { FindUserIdInput, FindUserIdOutput } from './dtos/find-user-id.dto';
 import {
   UpdateUserPasswordInput,
   UpdateUserPasswordOutput,
 } from './dtos/update-user-password.dto';
-import { InjectRedis } from '@liaoliaots/nestjs-redis';
-import { Redis } from 'ioredis';
 import { PUB_SUB } from 'src/common/common.constants';
 import { RedisPubSub } from 'graphql-redis-subscriptions';
 import { UserInformationConsent } from './entities/user-information-consent.entity';

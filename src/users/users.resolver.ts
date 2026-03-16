@@ -1,6 +1,6 @@
 import { UsersService } from './users.service';
 import { LoginInput, LoginOutput } from './dtos/login.dto';
-import { User, UserRole } from './entities/user.entity';
+import { User } from './entities/user.entity';
 import {
   CreateAccountInput,
   CreateAccountOutput,
@@ -11,8 +11,7 @@ import { UserProfileInput, UserProfileOutput } from './dtos/user-profile.dto';
 import { Role } from 'src/auth/role.decorator';
 import { AuthUser } from 'src/auth/auth-user.decorator';
 import { LogoutOutput } from './dtos/logout.dto';
-import { Request } from 'express';
-import { Inject, Res, UseGuards } from '@nestjs/common';
+import { Inject } from '@nestjs/common';
 import { FindUserIdInput, FindUserIdOutput } from './dtos/find-user-id.dto';
 import {
   UpdateUserPasswordInput,
@@ -23,7 +22,6 @@ import {
   PUB_SUB,
 } from 'src/common/common.constants';
 import { RedisPubSub } from 'graphql-redis-subscriptions';
-import { RolesAuthGuard } from 'src/auth/auth.guard';
 
 @Resolver((of) => User)
 export class UsersResolver {

@@ -1,10 +1,5 @@
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
-import {
-  MiddlewareConsumer,
-  Module,
-  NestModule,
-  RequestMethod,
-} from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
 import { UsersModule } from './users/users.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -15,9 +10,11 @@ import { AuthModule } from './auth/auth.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CommonModule } from './common/common.module';
 /* import { RedisModule } from '@liaoliaots/nestjs-redis'; */
-import { CharchInformationBoardsModule } from './charchInformation/charchinformationboard.module';
 import { UploadsModule } from './uploads/uploads.module';
 import GraphQLJSON from 'graphql-type-json';
+import { ChurchAlbumBoardsModule } from './churchAlbum/churchAlbumBoard.module';
+import { ChurchInformationBoardsModule } from './churchInformation/churchInformationBoard.module';
+import { ChurchBulletinBoardModule } from './churchBulletin/churchBulletinBoard.module';
 
 @Module({
   imports: [
@@ -103,10 +100,10 @@ import GraphQLJSON from 'graphql-type-json';
 
     UsersModule,
     AuthModule,
-    /*     QnaModule,
-    NoticeModule, */
     CommonModule,
-    CharchInformationBoardsModule,
+    ChurchInformationBoardsModule,
+    ChurchAlbumBoardsModule,
+    ChurchBulletinBoardModule,
   ],
   controllers: [],
   providers: [ConfigService],

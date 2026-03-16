@@ -15,12 +15,12 @@ import { BoardType } from './board-type.enum';
 export class UploadsController {
   constructor(private readonly uploadsService: UploadsService) {}
 
-  @Post('image') // ✅ 이게 핵심
+  @Post('file') // ✅ 이게 핵심
   @UseInterceptors(FileInterceptor('file'))
   uploadEditorImage(
     @UploadedFile() file: Express.Multer.File,
     @Body('boardType') boardType: BoardType, // ⭐ enum 타입으로
   ) {
-    return this.uploadsService.uploadEditorImage(file, boardType);
+    return this.uploadsService.uploadFile(file, boardType);
   }
 }
