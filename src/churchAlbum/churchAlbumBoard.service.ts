@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { ILike, In, Repository } from 'typeorm';
 import { ChurchAlbumBoard } from './entities/churchAlbumBoard.entity';
 import { CoreOutput } from 'src/common/dtos/output.dto';
 import { User, UserRole } from 'src/users/entities/user.entity';
@@ -72,10 +72,23 @@ export class ChurchAlbumBoardService {
   async findAllChurchAlbumBoard({
     page,
     take,
+    search, // ✅ DTO에서 search 추가됨
   }: FindAllChurchAlbumBoardPaginationInput): Promise<FindAllChurchAlbumBoardOutput> {
     try {
       const skipValue = (page - 1) * take;
+
+      // --- 검색 조건 설정 ---
+      let whereCondition: any = {};
+      if (search) {
+        // 제목 또는 작성자에 검색어가 포함된 경우 (OR 조건)
+        whereCondition = [
+          { title: ILike(`%${search}%`) },
+          { author: ILike(`%${search}%`) },
+        ];
+      }
+
       const [results, totalResults] = await this.boardRepo.findAndCount({
+        where: whereCondition, // ✅ 조건 적용
         skip: skipValue < 0 ? 0 : skipValue,
         take: take,
         order: { createdAt: 'DESC' },

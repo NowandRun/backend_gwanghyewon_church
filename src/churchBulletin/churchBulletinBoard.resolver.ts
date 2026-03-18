@@ -29,7 +29,7 @@ export class ChurchBulletinBoardResolver {
   }
 
   @Query(() => FindAllChurchBulletinOutput)
-  findAllChurchBulletinBoard(
+  async findAllChurchBulletinBoard(
     @Args('input')
     paginationInput: FindAllChurchBulletinPaginationInput,
   ): Promise<FindAllChurchBulletinOutput> {

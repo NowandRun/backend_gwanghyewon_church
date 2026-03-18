@@ -1,7 +1,7 @@
 // boards/boards.service.ts (또는 charchinformation.service.ts)
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { ILike, In, Repository } from 'typeorm';
 import { ChurchInformationBoard } from './entities/churchInformationBoard.entity';
 import { CoreOutput } from 'src/common/dtos/output.dto';
 import { User, UserRole } from 'src/users/entities/user.entity';
@@ -72,17 +72,28 @@ export class ChurchInformationBoardService {
   async findAllChurchInformationBoard({
     page,
     take,
+    search, // ✅ DTO에서 search 추가됨
   }: FindAllChurchInformationBoardPaginationInput): Promise<FindAllChurchInformationBoardOutput> {
     try {
-      // 1. skip 계산 검증 (0보다 작아지지 않도록)
       const skipValue = (page - 1) * take;
 
+      // --- 검색 조건 설정 ---
+      let whereCondition: any = {};
+      if (search) {
+        // 제목 또는 작성자에 검색어가 포함된 경우 (OR 조건)
+        whereCondition = [
+          { title: ILike(`%${search}%`) },
+          { author: ILike(`%${search}%`) },
+        ];
+      }
+
       const [results, totalResults] = await this.boardRepo.findAndCount({
+        where: whereCondition, // ✅ 조건 적용
         skip: skipValue < 0 ? 0 : skipValue,
         take: take,
         order: {
-          isPinned: 'DESC', // ✅ 1순위: 공지글(true)이 상단에 오도록
-          createdAt: 'DESC', // ✅ 2순위: 그 안에서 최신순 정렬
+          isPinned: 'DESC',
+          createdAt: 'DESC',
         },
       });
 
@@ -90,7 +101,7 @@ export class ChurchInformationBoardService {
         ok: true,
         results,
         totalResults,
-        totalPages: Math.ceil(totalResults / take) || 1, // 최소 1페이지 보장
+        totalPages: Math.ceil(totalResults / take) || 1,
       };
     } catch (error) {
       console.error('조회 에러:', error);

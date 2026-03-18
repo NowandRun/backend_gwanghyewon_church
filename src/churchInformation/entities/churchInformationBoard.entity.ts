@@ -5,6 +5,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -22,6 +23,7 @@ export class ChurchInformationBoard {
   isPinned: boolean; // ✅ 공지글 여부 추가
 
   @Field()
+  @Index() // ✅ 제목 검색 성능 향상을 위한 인덱스 추가 (선택)
   @Column()
   title: string;
 

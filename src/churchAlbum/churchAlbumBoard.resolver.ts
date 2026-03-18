@@ -28,7 +28,7 @@ export class ChurchAlbumBoardResolver {
   }
 
   @Query(() => FindAllChurchAlbumBoardOutput)
-  findAllChurchAlbumBoard(
+  async findAllChurchAlbumBoard(
     @Args('input') paginationInput: FindAllChurchAlbumBoardPaginationInput,
   ): Promise<FindAllChurchAlbumBoardOutput> {
     return this.boardsService.findAllChurchAlbumBoard(paginationInput);

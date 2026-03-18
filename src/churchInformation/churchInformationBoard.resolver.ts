@@ -29,10 +29,12 @@ export class ChurchInformationBoardResolver {
   }
 
   @Query(() => FindAllChurchInformationBoardOutput)
-  findAllChurchInformationBoard(
+  async findAllChurchInformationBoard(
+    // ✅ async 추가 (일관성)
     @Args('input')
     paginationInput: FindAllChurchInformationBoardPaginationInput,
   ): Promise<FindAllChurchInformationBoardOutput> {
+    // paginationInput 내부에 이제 search 필드가 포함되어 서비스로 전달됩니다.
     return this.boardsService.findAllChurchInformationBoard(paginationInput);
   }
 
