@@ -1,5 +1,6 @@
 export enum BoardType {
-  CHARCH_INFORMATION = 'charchInformation',
+  CHURCH_INFORMATION = 'churchInformation',
   CHURCH_ALBUM = 'churchAlbum',
-  CHARCH_BULLETIN = 'charchBulletin',
+  CHURCH_BULLETIN = 'churchBulletin',
+  CHURCH_MAIN_POPUP = 'churchMainPopup',
 }

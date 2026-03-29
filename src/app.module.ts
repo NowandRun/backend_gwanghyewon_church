@@ -15,6 +15,7 @@ import GraphQLJSON from 'graphql-type-json';
 import { ChurchAlbumBoardsModule } from './churchAlbum/churchAlbumBoard.module';
 import { ChurchInformationBoardsModule } from './churchInformation/churchInformationBoard.module';
 import { ChurchBulletinBoardModule } from './churchBulletin/churchBulletinBoard.module';
+import { MainPopupBoardsModule } from './MainPopup/mainPopupBoard.module';
 
 @Module({
   imports: [
@@ -104,6 +105,7 @@ import { ChurchBulletinBoardModule } from './churchBulletin/churchBulletinBoard.
     ChurchInformationBoardsModule,
     ChurchAlbumBoardsModule,
     ChurchBulletinBoardModule,
+    MainPopupBoardsModule,
   ],
   controllers: [],
   providers: [ConfigService],

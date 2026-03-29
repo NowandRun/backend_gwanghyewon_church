@@ -13,6 +13,7 @@ import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 import { ChurchInformationBoard } from 'src/churchInformation/entities/churchInformationBoard.entity';
 import { ChurchAlbumBoard } from 'src/churchAlbum/entities/churchAlbumBoard.entity';
 import { ChurchBulletinBoard } from 'src/churchBulletin/entities/churchBulletinBoard.entity';
+import { MainPopupBoard } from 'src/MainPopup/entities/MainPopupBoard.entity';
 
 // enum 값을 export로 내보냄: SetMetadata로 사용
 export enum UserRole {
@@ -48,11 +49,6 @@ export class User extends CoreEntity {
   @Field((type) => String)
   @IsString()
   userId: string;
-
-  /* @Column()
-  @Field((type) => String)
-  @IsString()
-  email: string; */
 
   @Column({ select: false })
   @Field((type) => String)
@@ -128,6 +124,10 @@ export class User extends CoreEntity {
   @OneToMany(() => ChurchBulletinBoard, (board) => board.user)
   @Field(() => [ChurchBulletinBoard], { nullable: true })
   churchBulletinBoard: ChurchBulletinBoard[];
+
+  @OneToMany(() => MainPopupBoard, (board) => board.user)
+  @Field(() => [MainPopupBoard], { nullable: true })
+  mainPopupBoard: MainPopupBoard[];
 
   @BeforeInsert()
   @BeforeUpdate()
