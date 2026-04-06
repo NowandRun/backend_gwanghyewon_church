@@ -3,7 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ChurchBulletinBoard } from './entities/churchBulletinBoard.entity';
 import { ChurchBulletinBoardService } from './churchBulletinBoard.service';
 import { ChurchBulletinBoardResolver } from './churchBulletinBoard.resolver';
-import { UploadsModule } from 'src/uploads/uploads.module'; // 👈 추가
+import { UploadsModule } from '../uploads/uploads.module';
 
 @Module({
   imports: [

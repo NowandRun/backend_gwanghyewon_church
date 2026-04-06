@@ -3,7 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { MainPopupBoard } from './entities/MainPopupBoard.entity';
 import { MainPopupBoardService } from './mainPopupBoard.service';
 import { MainPopupResolver } from './mainPopupBoard.resolver';
-import { UploadsModule } from 'src/uploads/uploads.module'; // 👈 추가
+import { UploadsModule } from '../uploads/uploads.module';
 
 @Module({
   imports: [TypeOrmModule.forFeature([MainPopupBoard]), UploadsModule],

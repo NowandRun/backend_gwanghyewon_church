@@ -3,17 +3,17 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ILike, In, Repository } from 'typeorm';
 import { ChurchBulletinBoard } from './entities/churchBulletinBoard.entity';
-import { CoreOutput } from 'src/common/dtos/output.dto';
-import { User, UserRole } from 'src/users/entities/user.entity';
 import { CreateChurchBulletinBoardDto } from './dto/createCharchAlbumBoard.dto';
 import { EditChurchBulletinBoardDto } from './dto/editCharchAlbumBoard.dto';
 import { DeleteChurchBulletinBoardInput } from './dto/deleteCharchAlbumBoards.dto';
-import { UploadsService } from 'src/uploads/uploads.service';
 import { FindChurchBulletinBoardOutput } from './dto/findCharchBulletinBoard.dto';
 import {
   FindAllChurchBulletinOutput,
   FindAllChurchBulletinPaginationInput,
 } from './dto/findAllCharchInAlbumBoardPagination.dto';
+import { UploadsService } from '../uploads/uploads.service';
+import { User, UserRole } from '../users/entities/user.entity';
+import { CoreOutput } from '../common/dtos/output.dto';
 
 @Injectable()
 export class ChurchBulletinBoardService {

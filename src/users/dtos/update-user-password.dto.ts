@@ -1,6 +1,6 @@
 import { Field, InputType, ObjectType, PickType } from '@nestjs/graphql';
 import { PasswordCheakRole, User } from '../entities/user.entity';
-import { CoreOutput } from 'src/common/dtos/output.dto';
+import { CoreOutput } from '../../common/dtos/output.dto';
 
 @InputType()
 export class UpdateUserPasswordInput extends PickType(User, [

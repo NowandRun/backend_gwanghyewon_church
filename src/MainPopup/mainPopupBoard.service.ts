@@ -1,11 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ILike, In, Repository } from 'typeorm';
-import { CoreOutput } from 'src/common/dtos/output.dto';
-import { User, UserRole } from 'src/users/entities/user.entity';
 import { EditMainPopupBoardDto } from './dto/editMainPopupBoard.dto';
 import { DeleteMainPopupBoardInput } from './dto/deleteMainPopupBoard.dto';
-import { UploadsService } from 'src/uploads/uploads.service';
 import { FindMainPopupBoardOutput } from './dto/findMainPopupBoard.dto';
 import {
   FindAllMainPopupBoardOutput,
@@ -13,6 +10,9 @@ import {
 } from './dto/findAllMainPopupBoardPagination.dto';
 import { CreateMainPopupBoardDto } from './dto/createMainPopupBoard.dto';
 import { MainPopupBoard } from './entities/MainPopupBoard.entity';
+import { UploadsService } from '../uploads/uploads.service';
+import { User, UserRole } from '../users/entities/user.entity';
+import { CoreOutput } from '../common/dtos/output.dto';
 
 @Injectable()
 export class MainPopupBoardService {

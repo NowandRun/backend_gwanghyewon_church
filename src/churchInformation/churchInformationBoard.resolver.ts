@@ -1,12 +1,8 @@
 // boards/boards.controller.ts
-import { CoreOutput } from 'src/common/dtos/output.dto';
 import { ChurchInformationBoardService } from './churchInformationBoard.service';
 import { CreateChurchInformationBoardDto } from './dto/createChurchInformationBoard.dto';
 import { ChurchInformationBoard } from './entities/churchInformationBoard.entity';
 import { Args, Float, Mutation, Query, Resolver } from '@nestjs/graphql';
-import { Role } from 'src/auth/role.decorator';
-import { User, UserRole } from 'src/users/entities/user.entity';
-import { AuthUser } from 'src/auth/auth-user.decorator';
 import {
   FindAllChurchInformationBoardOutput,
   FindAllChurchInformationBoardPaginationInput,
@@ -14,6 +10,10 @@ import {
 import { FindChurchInformationBoardOutput } from './dto/findChurchInformationBoard.dto';
 import { EditChurchInformationBoardDto } from './dto/editChurchInformationBoard.dto';
 import { DeleteChurchInformationBoardInput } from './dto/deleteChurchInformationBoard.dto';
+import { Role } from '../auth/role.decorator';
+import { User, UserRole } from '../users/entities/user.entity';
+import { CoreOutput } from '../common/dtos/output.dto';
+import { AuthUser } from '../auth/auth-user.decorator';
 
 @Resolver(() => ChurchInformationBoard)
 export class ChurchInformationBoardResolver {

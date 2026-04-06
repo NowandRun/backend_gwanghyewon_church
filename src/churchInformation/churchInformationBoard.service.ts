@@ -3,8 +3,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ILike, In, Repository } from 'typeorm';
 import { ChurchInformationBoard } from './entities/churchInformationBoard.entity';
-import { CoreOutput } from 'src/common/dtos/output.dto';
-import { User, UserRole } from 'src/users/entities/user.entity';
 import { CreateChurchInformationBoardDto } from './dto/createChurchInformationBoard.dto';
 import {
   FindAllChurchInformationBoardOutput,
@@ -13,7 +11,9 @@ import {
 import { FindChurchInformationBoardOutput } from './dto/findChurchInformationBoard.dto';
 import { EditChurchInformationBoardDto } from './dto/editChurchInformationBoard.dto';
 import { DeleteChurchInformationBoardInput } from './dto/deleteChurchInformationBoard.dto';
-import { UploadsService } from 'src/uploads/uploads.service';
+import { UploadsService } from '../uploads/uploads.service';
+import { User, UserRole } from '../users/entities/user.entity';
+import { CoreOutput } from '../common/dtos/output.dto';
 
 @Injectable()
 export class ChurchInformationBoardService {

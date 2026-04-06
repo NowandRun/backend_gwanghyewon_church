@@ -1,7 +1,7 @@
 import { Field, InputType, Int, ObjectType } from '@nestjs/graphql';
-import { CoreOutput } from 'src/common/dtos/output.dto';
 import { ChurchInformationBoard } from '../entities/churchInformationBoard.entity';
 import { IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { CoreOutput } from '../../common/dtos/output.dto';
 
 @InputType()
 export class FindAllChurchInformationBoardPaginationInput {

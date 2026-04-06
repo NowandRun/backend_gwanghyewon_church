@@ -2,8 +2,8 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ChurchInformationBoard } from './entities/churchInformationBoard.entity';
 import { ChurchInformationBoardService } from './churchInformationBoard.service';
-import { UploadsModule } from 'src/uploads/uploads.module'; // 👈 추가
 import { ChurchInformationBoardResolver } from './churchInformationBoard.resolver';
+import { UploadsModule } from '../uploads/uploads.module';
 
 @Module({
   imports: [

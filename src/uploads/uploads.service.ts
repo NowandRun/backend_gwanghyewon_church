@@ -8,7 +8,7 @@ import {
 } from '@aws-sdk/client-s3';
 import { BoardType } from './board-type.enum';
 import { extname } from 'path';
-import * as dayjs from 'dayjs';
+import dayjs from 'dayjs';
 import { UploadsModuleOptions } from './uploads.module';
 
 @Injectable()

@@ -8,7 +8,6 @@ import {
 } from './dtos/create-account.dto';
 import { LoginInput, LoginOutput } from './dtos/login.dto';
 import { PasswordCheakRole, User, UserRole } from './entities/user.entity';
-import { JwtService } from 'src/jwt/jwt.service';
 import { UserProfileOutput } from './dtos/user-profile.dto';
 import { ConfigService } from '@nestjs/config';
 import { FindUserIdInput, FindUserIdOutput } from './dtos/find-user-id.dto';
@@ -16,9 +15,10 @@ import {
   UpdateUserPasswordInput,
   UpdateUserPasswordOutput,
 } from './dtos/update-user-password.dto';
-import { PUB_SUB } from 'src/common/common.constants';
 import { RedisPubSub } from 'graphql-redis-subscriptions';
 import { UserInformationConsent } from './entities/user-information-consent.entity';
+import { JwtService } from '../jwt/jwt.service';
+import { PUB_SUB } from '../common/common.constants';
 
 @Injectable()
 export class UsersService {

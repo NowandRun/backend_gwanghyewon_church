@@ -7,13 +7,14 @@ import {
 } from '@nestjs/graphql';
 import { BeforeInsert, BeforeUpdate, Column, Entity, OneToMany } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { CoreEntity } from 'src/common/entities/core.entity';
 import { InternalServerErrorException } from '@nestjs/common';
 import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
-import { ChurchInformationBoard } from 'src/churchInformation/entities/churchInformationBoard.entity';
-import { ChurchAlbumBoard } from 'src/churchAlbum/entities/churchAlbumBoard.entity';
-import { ChurchBulletinBoard } from 'src/churchBulletin/entities/churchBulletinBoard.entity';
-import { MainPopupBoard } from 'src/MainPopup/entities/MainPopupBoard.entity';
+
+import { CoreEntity } from '../../common/entities/core.entity';
+import { ChurchInformationBoard } from '../../churchInformation/entities/churchInformationBoard.entity';
+import { ChurchAlbumBoard } from '../../churchAlbum/entities/churchAlbumBoard.entity';
+import { ChurchBulletinBoard } from '../../churchBulletin/entities/churchBulletinBoard.entity';
+import { MainPopupBoard } from '../../MainPopup/entities/MainPopupBoard.entity';
 
 // enum 값을 export로 내보냄: SetMetadata로 사용
 export enum UserRole {

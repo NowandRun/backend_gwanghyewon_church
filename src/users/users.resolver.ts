@@ -8,8 +8,7 @@ import {
 } from './dtos/create-account.dto';
 import { Args, Mutation, Resolver, Query, Subscription } from '@nestjs/graphql';
 import { UserProfileInput, UserProfileOutput } from './dtos/user-profile.dto';
-import { Role } from 'src/auth/role.decorator';
-import { AuthUser } from 'src/auth/auth-user.decorator';
+
 import { LogoutOutput } from './dtos/logout.dto';
 import { Inject } from '@nestjs/common';
 import { FindUserIdInput, FindUserIdOutput } from './dtos/find-user-id.dto';
@@ -17,11 +16,11 @@ import {
   UpdateUserPasswordInput,
   UpdateUserPasswordOutput,
 } from './dtos/update-user-password.dto';
-import {
-  NEW_DELETE_ACCOUNT_MESSAGE,
-  PUB_SUB,
-} from 'src/common/common.constants';
+
 import { RedisPubSub } from 'graphql-redis-subscriptions';
+import { NEW_DELETE_ACCOUNT_MESSAGE, PUB_SUB } from '../common/common.constants';
+import { Role } from '../auth/role.decorator';
+import { AuthUser } from '../auth/auth-user.decorator';
 
 @Resolver((of) => User)
 export class UsersResolver {

@@ -9,10 +9,10 @@ import {
   FindAllChurchAlbumBoardPaginationInput,
 } from './dto/findAllChurchAlbumBoardPagination.dto';
 import { FindChurchAlbumBoardOutput } from './dto/findChurchAlbumBoard.dto';
-import { CoreOutput } from 'src/common/dtos/output.dto';
-import { Role } from 'src/auth/role.decorator';
-import { AuthUser } from 'src/auth/auth-user.decorator';
-import { User, UserRole } from 'src/users/entities/user.entity';
+import { User, UserRole } from '../users/entities/user.entity';
+import { CoreOutput } from '../common/dtos/output.dto';
+import { AuthUser } from '../auth/auth-user.decorator';
+import { Role } from '../auth/role.decorator';
 
 @Resolver(() => ChurchAlbumBoard)
 export class ChurchAlbumBoardResolver {

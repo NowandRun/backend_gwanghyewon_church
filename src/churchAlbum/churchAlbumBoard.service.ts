@@ -2,17 +2,18 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ILike, In, Repository } from 'typeorm';
 import { ChurchAlbumBoard } from './entities/churchAlbumBoard.entity';
-import { CoreOutput } from 'src/common/dtos/output.dto';
-import { User, UserRole } from 'src/users/entities/user.entity';
+
 import { CreateChurchAlbumBoardDto } from './dto/createChurchAlbumBoard.dto';
 import { EditChurchAlbumBoardDto } from './dto/editChurchAlbumBoard.dto';
 import { DeleteChurchAlbumBoardInput } from './dto/deleteChurchAlbumBoard.dto';
-import { UploadsService } from 'src/uploads/uploads.service';
 import { FindChurchAlbumBoardOutput } from './dto/findChurchAlbumBoard.dto';
 import {
   FindAllChurchAlbumBoardOutput,
   FindAllChurchAlbumBoardPaginationInput,
 } from './dto/findAllChurchAlbumBoardPagination.dto';
+import { CoreOutput } from '../common/dtos/output.dto';
+import { User, UserRole } from '../users/entities/user.entity';
+import { UploadsService } from '../uploads/uploads.service';
 
 @Injectable()
 export class ChurchAlbumBoardService {
@@ -184,7 +185,7 @@ export class ChurchAlbumBoardService {
       // 🚀 ID 기반 비교 + 관리자 예외 허용
       const canDeleteAll = boards.every(
         (board) =>
-          board.user?.id === user.id ||
+          board.user?.userId === user.userId ||
           user.role === UserRole.Admin ||
           user.role === UserRole.SuperAdmin,
       );

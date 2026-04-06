@@ -1,8 +1,8 @@
 import { Field, InputType, ObjectType } from '@nestjs/graphql';
 import { Column, Entity, JoinColumn, OneToOne } from 'typeorm';
-import { CoreEntity } from 'src/common/entities/core.entity';
 import { IsBoolean } from 'class-validator';
 import { User } from './user.entity';
+import { CoreEntity } from '../../common/entities/core.entity';
 
 @InputType('UserInformationConsentInputType', { isAbstract: true })
 @ObjectType()

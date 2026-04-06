@@ -1,8 +1,8 @@
 // boards/dto/pagination.dto.ts (없다면 생성하거나 findAll 인자로 직접 정의)
 import { Field, InputType, Int, ObjectType } from '@nestjs/graphql';
-import { CoreOutput } from 'src/common/dtos/output.dto';
 import { ChurchAlbumBoard } from '../entities/churchAlbumBoard.entity';
 import { IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { CoreOutput } from '../../common/dtos/output.dto';
 
 @InputType()
 export class FindAllChurchAlbumBoardPaginationInput {
