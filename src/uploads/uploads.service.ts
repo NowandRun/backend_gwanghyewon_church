@@ -34,6 +34,10 @@ export class UploadsService {
     const extension = extname(decodedName).toLowerCase();
     const datePath = dayjs().format('YYYY/MM/DD');
 
+    // 1. 파일명 중복을 피하기 위해 고유 ID 추가
+    // 예: sample-06.jpg -> 1713123456789_sample-06.jpg
+    const uniqueFileName = `${Date.now()}_${decodedName}`;
+
     // 🚀 [추가] 1. 하루 전체 업로드 개수 제한 체크
     // 'boards/' 경로 아래 오늘 날짜(YYYY/MM/DD)로 시작하는 모든 객체를 조회합니다.
     const listCommand = new ListObjectsV2Command({
@@ -63,7 +67,7 @@ export class UploadsService {
       folder = 'images';
     else if (extension === '.pdf') folder = 'pdfs';
 
-    const s3Key = `boards/${boardType}/${datePath}/${folder}/${decodedName}`;
+    const s3Key = `boards/${boardType}/${datePath}/${folder}/${uniqueFileName}`;
 
     // 2. 중복 파일 체크 로직 (기존 유지)
     try {
