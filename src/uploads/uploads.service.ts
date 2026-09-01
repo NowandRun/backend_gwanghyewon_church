@@ -48,8 +48,7 @@ export class UploadsService {
     try {
       const objects = await this.s3.send(listCommand);
       // 오늘 날짜 경로가 포함된 파일들만 필터링하여 카운트
-      const todayFiles =
-        objects.Contents?.filter((obj) => obj.Key?.includes(datePath)) || [];
+      const todayFiles = objects.Contents?.filter((obj) => obj.Key?.includes(datePath)) || [];
 
       if (todayFiles.length >= this.MAX_DAILY_UPLOADS) {
         throw new BadRequestException(
@@ -63,8 +62,7 @@ export class UploadsService {
 
     // 폴더 분류 로직
     let folder = 'others';
-    if (['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(extension))
-      folder = 'images';
+    if (['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(extension)) folder = 'images';
     else if (extension === '.pdf') folder = 'pdfs';
 
     const s3Key = `boards/${boardType}/${datePath}/${folder}/${uniqueFileName}`;

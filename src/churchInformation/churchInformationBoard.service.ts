@@ -23,27 +23,34 @@ export class ChurchInformationBoardService {
     private readonly uploadsService: UploadsService, // ✅ 의존성 주입 추가
   ) {}
 
-  private extractAllS3Urls(board: {
-    blocks?: any;
-    fileUrls?: string[];
-  }): string[] {
+  private extractAllS3Urls(board: { blocks?: any; fileUrls?: string[] }): string[] {
     const urls: string[] = [];
+
+    // 1. 명시적 배열 처리 (가장 정확함)
     if (board.fileUrls && Array.isArray(board.fileUrls)) {
       urls.push(...board.fileUrls);
     }
 
+    // 2. 블록 데이터 처리
     if (board.blocks) {
       const contentStr =
-        typeof board.blocks === 'string'
-          ? board.blocks
-          : JSON.stringify(board.blocks);
-      // S3 버킷 주소 패턴 (정규식 내 변수 처리가 까다로우므로 일반적인 S3 도메인 패턴 사용)
-      const s3UrlPattern =
-        /https:\/\/[a-z0-9.-]+\.s3\.[a-z0-9-]+\.amazonaws\.com\/[^"']+/g;
+        typeof board.blocks === 'string' ? board.blocks : JSON.stringify(board.blocks);
+
+      // S3 패턴 추출
+      const s3UrlPattern = /https:\/\/[a-z0-9.-]+\.s3\.[a-z0-9-]+\.amazonaws\.com\/[^"']+/g;
       const found = contentStr.match(s3UrlPattern);
-      if (found) urls.push(...found);
+
+      if (found) {
+        const sanitized = found.map((url) => {
+          // 정규식 결과 중 혹시 포함되었을지 모를 제어문자나 따옴표 제거
+          return url.replace(/[\\\\"']/g, '').trim();
+        });
+        urls.push(...sanitized);
+      }
     }
-    return [...new Set(urls)];
+
+    // 3. 중복 제거 및 유효성 검사 (실제 URL 형태인지)
+    return [...new Set(urls)].filter((url) => url.startsWith('http'));
   }
 
   async createChurchInformationBoard(
@@ -81,10 +88,7 @@ export class ChurchInformationBoardService {
       let whereCondition: any = {};
       if (search) {
         // 제목 또는 작성자에 검색어가 포함된 경우 (OR 조건)
-        whereCondition = [
-          { title: ILike(`%${search}%`) },
-          { author: ILike(`%${search}%`) },
-        ];
+        whereCondition = [{ title: ILike(`%${search}%`) }, { author: ILike(`%${search}%`) }];
       }
 
       const [results, totalResults] = await this.boardRepo.findAndCount({
@@ -113,9 +117,7 @@ export class ChurchInformationBoardService {
   }
 
   // 상세 조회 수정
-  async findChurchInformationBoardById(
-    id: number,
-  ): Promise<FindChurchInformationBoardOutput> {
+  async findChurchInformationBoardById(id: number): Promise<FindChurchInformationBoardOutput> {
     try {
       // 🚀 핵심: user 관계를 명시적으로 로드합니다.
       const board = await this.boardRepo.findOne({
@@ -154,8 +156,7 @@ export class ChurchInformationBoardService {
 
       // 'ADMIN' (X) -> UserRole.Admin (O)
       // SuperAdmin도 관리자이므로 함께 체크하는 것이 좋습니다.
-      const isAdmin =
-        user.role === UserRole.Admin || user.role === UserRole.SuperAdmin;
+      const isAdmin = user.role === UserRole.Admin || user.role === UserRole.SuperAdmin;
 
       if (!isOwner && !isAdmin) {
         return { ok: false, error: '권한이 없습니다.' };
@@ -164,13 +165,15 @@ export class ChurchInformationBoardService {
       const oldUrls = this.extractAllS3Urls(board);
       const newUrls = this.extractAllS3Urls(dto);
 
-      const urlsToDelete = oldUrls.filter((url) => !newUrls.includes(url));
-      for (const url of urlsToDelete) {
-        await this.uploadsService.deleteS3File(url);
-      }
-
       // ... (S3 처리 및 저장 로직)
       await this.boardRepo.save({ ...board, ...dto });
+
+      const urlsToDelete = oldUrls.filter((url) => !newUrls.includes(url));
+
+      Promise.all(urlsToDelete.map((url) => this.uploadsService.deleteS3File(url))).catch((e) =>
+        console.error('파일 삭제 중 지연 오류:', e),
+      );
+
       return { ok: true };
     } catch (error) {
       return { ok: false, error: '수정 중 오류 발생' };
@@ -192,8 +195,7 @@ export class ChurchInformationBoardService {
         relations: ['user'], // user 관계 추가 로드
       });
 
-      if (boards.length === 0)
-        return { ok: false, error: '삭제할 게시글이 없습니다.' };
+      if (boards.length === 0) return { ok: false, error: '삭제할 게시글이 없습니다.' };
 
       // 🚀 ID 기반 비교 + 관리자 예외 허용
       const canDeleteAll = boards.every(

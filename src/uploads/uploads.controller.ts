@@ -1,15 +1,10 @@
 // uploads/uploads.controller.ts
-import {
-  Controller,
-  Post,
-  UploadedFile,
-  UseInterceptors,
-  Body,
-} from '@nestjs/common';
+
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadsService } from './uploads.service';
 import { Express } from 'express';
 import { BoardType } from './board-type.enum';
+import { Body, Controller, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
 
 @Controller('uploads')
 export class UploadsController {

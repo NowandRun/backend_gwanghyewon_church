@@ -23,29 +23,38 @@ export class MainPopupBoardService {
   ) {}
 
   /**
-   * 삭제 전 S3 URL 추출: 썸네일 및 blocks 내부에 포함된 모든 S3 링크를 찾습니다.
+   * 🚀 메인 팝업용 S3 URL 추출
+   * 고정된 구조(landscape, portrait)뿐만 아니라 내부 문자열까지 검사하여 안전하게 추출합니다.
    */
-  private extractAllS3Urls(board: { blocks?: any }): string[] {
+  private extractAllS3Urls(board: any): string[] {
     const urls: string[] = [];
-    if (board.blocks) {
-      const contentStr =
-        typeof board.blocks === 'string'
-          ? board.blocks
-          : JSON.stringify(board.blocks);
 
-      // S3 URL 정규식 패턴
-      const s3UrlPattern =
-        /https:\/\/[a-z0-9.-]+\.s3\.[a-z0-9-]+\.amazonaws\.com\/[^"']+/g;
+    if (board.blocks) {
+      // 1. 고정된 객체 구조에서 명시적 추출 (가장 정확함)
+      if (board.blocks.landscape?.url) urls.push(board.blocks.landscape.url.trim());
+      if (board.blocks.portrait?.url) urls.push(board.blocks.portrait.url.trim());
+
+      // 2. 보조장치: blocks 전체를 문자열로 검사하여 혹시 모를 URL 추출
+      // (구조가 변경되거나 문자열 내부에 URL이 숨어있을 경우 대비)
+      const contentStr =
+        typeof board.blocks === 'string' ? board.blocks : JSON.stringify(board.blocks);
+
+      const s3UrlPattern = /https:\/\/[a-z0-9.-]+\.s3\.[a-z0-9-]+\.amazonaws\.com\/[^"']+/g;
       const found = contentStr.match(s3UrlPattern);
-      if (found) urls.push(...found);
+
+      if (found) {
+        const sanitized = found.map((url) => url.replace(/[\\\\"']/g, '').trim());
+        urls.push(...sanitized);
+      }
     }
-    return [...new Set(urls)]; // 중복 제거
+
+    // 중복 제거 및 S3 도메인 포함 여부 확인
+    return [...new Set(urls)].filter(
+      (url) => url.startsWith('http') && url.includes('amazonaws.com'),
+    );
   }
 
-  async createMainPopupBoard(
-    user: User,
-    dto: CreateMainPopupBoardDto,
-  ): Promise<CoreOutput> {
+  async createMainPopupBoard(user: User, dto: CreateMainPopupBoardDto): Promise<CoreOutput> {
     try {
       // 🚀 로그인하지 않은 사용자가 어떠한 경로로든 들어왔을 경우 방어
       if (!user) {
@@ -76,10 +85,7 @@ export class MainPopupBoardService {
       let whereCondition: any = {};
       if (search) {
         // 제목 또는 작성자에 검색어가 포함된 경우 (OR 조건)
-        whereCondition = [
-          { title: ILike(`%${search}%`) },
-          { author: ILike(`%${search}%`) },
-        ];
+        whereCondition = [{ title: ILike(`%${search}%`) }, { author: ILike(`%${search}%`) }];
       }
 
       const [results, totalResults] = await this.boardRepo.findAndCount({
@@ -114,10 +120,7 @@ export class MainPopupBoardService {
     }
   }
 
-  async editMainPopupBoard(
-    user: User,
-    dto: EditMainPopupBoardDto,
-  ): Promise<CoreOutput> {
+  async editMainPopupBoard(user: User, dto: EditMainPopupBoardDto): Promise<CoreOutput> {
     try {
       if (!user) {
         return { ok: false, error: '로그인이 필요한 서비스입니다.' };
@@ -134,8 +137,7 @@ export class MainPopupBoardService {
 
       // 'ADMIN' (X) -> UserRole.Admin (O)
       // SuperAdmin도 관리자이므로 함께 체크하는 것이 좋습니다.
-      const isAdmin =
-        user.role === UserRole.Admin || user.role === UserRole.SuperAdmin;
+      const isAdmin = user.role === UserRole.Admin || user.role === UserRole.SuperAdmin;
 
       if (!isOwner && !isAdmin) {
         return { ok: false, error: '권한이 없습니다.' };
@@ -143,23 +145,22 @@ export class MainPopupBoardService {
 
       const oldUrls = this.extractAllS3Urls(board);
       const newUrls = this.extractAllS3Urls(dto);
+      await this.boardRepo.save({ ...board, ...dto });
 
       const urlsToDelete = oldUrls.filter((url) => !newUrls.includes(url));
-      for (const url of urlsToDelete) {
-        await this.uploadsService.deleteS3File(url);
-      }
 
-      await this.boardRepo.save({ ...board, ...dto });
+      // 비동기로 처리하여 사용자 응답 속도에 영향을 주지 않도록 함
+      Promise.all(urlsToDelete.map((url) => this.uploadsService.deleteS3File(url))).catch((e) =>
+        console.error('파일 삭제 중 지연 오류:', e),
+      );
+
       return { ok: true };
     } catch (error) {
       return { ok: false, error: '수정 중 오류 발생' };
     }
   }
 
-  async deleteMainPopupBoard(
-    user: User,
-    { ids }: DeleteMainPopupBoardInput,
-  ): Promise<CoreOutput> {
+  async deleteMainPopupBoard(user: User, { ids }: DeleteMainPopupBoardInput): Promise<CoreOutput> {
     try {
       // 🚀 로그인하지 않은 사용자가 어떠한 경로로든 들어왔을 경우 방어
       if (!user) {
@@ -170,8 +171,7 @@ export class MainPopupBoardService {
         where: { id: In(ids) },
         relations: ['user'], // user 관계 추가 로드
       });
-      if (boards.length === 0)
-        return { ok: false, error: '삭제할 게시글이 없습니다.' };
+      if (boards.length === 0) return { ok: false, error: '삭제할 게시글이 없습니다.' };
 
       // 🚀 ID 기반 비교 + 관리자 예외 허용
       const canDeleteAll = boards.every(
