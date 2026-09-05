@@ -18,7 +18,7 @@ async function bootstrap() {
 
   // ✅ CORS 설정 (React 3000번 포트 기준)
   app.enableCors({
-    origin: 'http://localhost:3000',
+    origin: ['http://localhost:3000', 'http://wavenexusforwebsite.serveirc.com'],
     credentials: true,
   });
 
