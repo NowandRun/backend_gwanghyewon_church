@@ -25,16 +25,19 @@ import { MainPopupBoardsModule } from './MainPopup/mainPopupBoard.module';
       ignoreEnvFile: process.env.NODE_ENV === 'production',
       validationSchema: Joi.object({
         NODE_ENV: Joi.string().valid('dev', 'production', 'test').required(),
-        DB_HOST: Joi.string(),
-        DB_PORT: Joi.string(),
+        DB_TYPE: Joi.string().required(),
+        DB_HOST: Joi.string().required(),
+        DB_PORT: Joi.string().required(),
         DB_USERNAME: Joi.string().required(),
-        DB_NAME: Joi.string(),
-        DB_PASSWORD: Joi.string(),
+        DB_DATABASE: Joi.string().required(),
+        DB_PASSWORD: Joi.string().required(),
         BCRYPT_SALT_ROUNDS: Joi.number().default(10),
         PRIVATE_KEY: Joi.string().required(),
         PRIVATE_KEY_EXPIRES_IN: Joi.string().required(),
-        REDIS_HOST: Joi.string().required(),
-        REDIS_PORT: Joi.string().required(),
+
+        // REDIS (미사용 시 optional)
+        REDIS_HOST: Joi.string().optional(),
+        REDIS_PORT: Joi.number().optional(),
         REDIS_PASSWORD: Joi.string().allow('').optional(),
 
         // AWS S3 ✅
@@ -44,22 +47,22 @@ import { MainPopupBoardsModule } from './MainPopup/mainPopupBoard.module';
         AWS_SECRET_ACCESS_KEY: Joi.string().required(),
       }),
     }),
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      ...(process.env.DATABASE_URL
-        ? { url: process.env.DATABASE_URL }
-        : {
-            host: process.env.DB_HOST,
-            port: +process.env.DB_PORT,
-            username: process.env.DB_USERNAME,
-            password: process.env.DB_PASSWORD,
-            database: process.env.DB_NAME,
-          }),
-      synchronize: process.env.NODE_ENV !== 'production',
-      logging:
-        process.env.NODE_ENV !== 'production' &&
-        process.env.NODE_ENV !== 'test',
-      autoLoadEntities: true,
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        type: config.get<string>('DB_TYPE') as any,
+        host: config.get<string>('DB_HOST'),
+        port: config.get<number>('DB_PORT'),
+        username: config.get<string>('DB_USERNAME'),
+        password: config.get<string>('DB_PASSWORD'),
+        database: config.get<string>('DB_DATABASE'),
+        synchronize: config.get<string>('NODE_ENV') !== 'production',
+        logging:
+          config.get<string>('NODE_ENV') !== 'production' &&
+          config.get<string>('NODE_ENV') !== 'test',
+        autoLoadEntities: true,
+      }),
     }),
     /*  RedisModule.forRoot({
       readyLog: process.env.NODE_ENV !== 'production',
