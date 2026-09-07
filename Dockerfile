@@ -1,26 +1,24 @@
+# Stage 1: Build
 FROM node:22 AS build
-RUN mkdir -p /app
 WORKDIR /app
-COPY package*.json /app/
-RUN npm install
-COPY . /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
 RUN npm run build
 
 # Stage 2: Production
 FROM node:22-slim
-
-# Create and set working directory
 WORKDIR /app
 
-# Copy only necessary files from the build stage
-COPY --from=build /app/dist /app/dist
+# 빌드 결과물 및 package.json 복사
+COPY --from=build /app/dist ./dist
 COPY --from=build /app/package*.json ./
 
-# Install production dependencies
-RUN npm install --only=production && npm prune --production
+# 프로덕션 의존성만 설치
+RUN npm ci --omit=dev
 
-# Expose the port the app runs on
+# 포트 노출
 EXPOSE 4000
 
-# Command to run the application
-CMD ["sh", "-c", "npm run typeorm:run && node dist/main.js"]
+# 백엔드 직접 실행 (마이그레이션 단계 제거)
+CMD ["node", "dist/main.js"]
