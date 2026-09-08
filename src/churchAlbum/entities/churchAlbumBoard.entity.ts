@@ -11,7 +11,6 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-
 @ObjectType()
 @Entity()
 export class ChurchAlbumBoard {
@@ -43,6 +42,9 @@ export class ChurchAlbumBoard {
   @Field()
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @Column({ nullable: true })
+  revertTest: string;
 
   @Field(() => User, { nullable: true })
   @ManyToOne(() => User, (user) => user.churchAlbumBoard, {

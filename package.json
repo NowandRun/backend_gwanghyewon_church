@@ -8,7 +8,7 @@
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "cross-env NODE_ENV=production nest start ",
+    "start": "cross-env NODE_ENV=production nest start",
     "start:dev": "cross-env NODE_ENV=dev nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "npm run typeorm:run && node dist/main.js",
@@ -18,10 +18,10 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "typeorm": "typeorm",
-    "typeorm:run": "npx typeorm migration:run -d /app/dist/config/data-source.config.js",
-    "typeorm:revert": "typeorm migration:revert",
-    "typeorm:generate": "typeorm migration:generate"
+    "typeorm": "typeorm-cli",
+    "typeorm:run": "npm run build && npx typeorm-ts-node-commonjs migration:run -d src/config/data-source.ts",
+    "typeorm:revert": "npm run build && npx typeorm-ts-node-commonjs migration:revert -d src/config/data-source.ts",
+    "migration:generate": "npm run build && npx typeorm-ts-node-commonjs migration:generate src/migrations/InitialMigration -d src/config/data-source.ts"
   },
   "dependencies": {
     "@apollo/server": "^4.10.4",
@@ -88,6 +88,7 @@
     "supertest": "^6.3.3",
     "ts-jest": "^29.1.0",
     "ts-loader": "^9.4.3",
+    "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.1.3"
   },

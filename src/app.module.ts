@@ -57,9 +57,11 @@ import { MainPopupBoardsModule } from './MainPopup/mainPopupBoard.module';
         username: config.get<string>('DB_USERNAME'),
         password: config.get<string>('DB_PASSWORD'),
         database: config.get<string>('DB_DATABASE'),
-        synchronize: true, // 👈 초기 배포 및 테이블 생성을 위해 true로 설정
+        synchronize: false, // 👈 초기 배포 및 테이블 생성을 위해 true로 설정
         logging: true, // 👈 DB 쿼리 생성을 확인하기 위해 true 추천
         autoLoadEntities: true,
+        migrations: ['dist/migrations/*.js'],
+        migrationsRun: true,
       }),
     }),
     /*  RedisModule.forRoot({
