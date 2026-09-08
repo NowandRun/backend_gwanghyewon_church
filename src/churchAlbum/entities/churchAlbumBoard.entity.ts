@@ -43,9 +43,6 @@ export class ChurchAlbumBoard {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @Column({ nullable: true })
-  revertTest: string;
-
   @Field(() => User, { nullable: true })
   @ManyToOne(() => User, (user) => user.churchAlbumBoard, {
     onDelete: 'CASCADE',
