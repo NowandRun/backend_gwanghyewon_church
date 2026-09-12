@@ -9,16 +9,16 @@ import {
 import { BoardType } from './board-type.enum';
 import { extname } from 'path';
 import dayjs from 'dayjs';
-import { UploadsModuleOptions } from './uploads.module';
+import { S3UploadsModuleOptions } from './s3uploads.module';
 
 @Injectable()
-export class UploadsService {
+export class S3UploadsService {
   private readonly s3: S3Client;
   private readonly MAX_DAILY_UPLOADS = 50; // 🚀 하루 제한 설정
 
   constructor(
     @Inject('UPLOADS_OPTIONS')
-    private readonly options: UploadsModuleOptions,
+    private readonly options: S3UploadsModuleOptions,
   ) {
     this.s3 = new S3Client({
       region: options.region,
@@ -29,7 +29,7 @@ export class UploadsService {
     });
   }
 
-  async uploadFile(file: Express.Multer.File, boardType: BoardType) {
+  async s3uploadFile(file: Express.Multer.File, boardType: BoardType) {
     const decodedName = decodeURIComponent(file.originalname);
     const extension = extname(decodedName).toLowerCase();
     const datePath = dayjs().format('YYYY/MM/DD');
@@ -106,7 +106,7 @@ export class UploadsService {
     }
   }
 
-  async deleteS3File(fileUrl: string) {
+  async s3deleteS3File(fileUrl: string) {
     try {
       if (!fileUrl) return;
 
