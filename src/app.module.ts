@@ -10,12 +10,13 @@ import { AuthModule } from './auth/auth.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CommonModule } from './common/common.module';
 /* import { RedisModule } from '@liaoliaots/nestjs-redis'; */
-import { UploadsModule } from './uploads/uploads.module';
 import GraphQLJSON from 'graphql-type-json';
 import { ChurchAlbumBoardsModule } from './churchAlbum/churchAlbumBoard.module';
 import { ChurchInformationBoardsModule } from './churchInformation/churchInformationBoard.module';
 import { ChurchBulletinBoardModule } from './churchBulletin/churchBulletinBoard.module';
 import { MainPopupBoardsModule } from './MainPopup/mainPopupBoard.module';
+import { S3UploadsModule } from './uploads/s3uploads.module';
+import { UploadsModule } from './uploads/uploads.module';
 
 @Module({
   imports: [
@@ -91,7 +92,7 @@ import { MainPopupBoardsModule } from './MainPopup/mainPopupBoard.module';
       privateKeyExpiresIn: process.env.PRIVATE_KEY_EXPIRES_IN,
     }),
 
-    UploadsModule.forRootAsync({
+    S3UploadsModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({
         bucket: config.get('AWS_BUCKET'),
@@ -101,7 +102,7 @@ import { MainPopupBoardsModule } from './MainPopup/mainPopupBoard.module';
       }),
       inject: [ConfigService],
     }),
-
+    UploadsModule,
     UsersModule,
     AuthModule,
     CommonModule,
