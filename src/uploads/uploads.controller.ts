@@ -1,10 +1,10 @@
 // uploads/uploads.controller.ts
 
 import { FileInterceptor } from '@nestjs/platform-express';
-import { UploadsService } from './uploads.service';
 import { Express } from 'express';
 import { BoardType } from './board-type.enum';
-import { Body, Controller, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Get, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { UploadsService } from './uploads.service';
 
 @Controller('uploads')
 export class UploadsController {
@@ -17,5 +17,10 @@ export class UploadsController {
     @Body('boardType') boardType: BoardType, // ⭐ enum 타입으로
   ) {
     return this.uploadsService.uploadFile(file, boardType);
+  }
+
+  @Get('storage-status')
+  async getStorageStatus() {
+    return await this.uploadsService.getStorageStatus();
   }
 }

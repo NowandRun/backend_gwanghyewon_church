@@ -21,7 +21,7 @@
     "typeorm": "typeorm-cli",
     "typeorm:run": "npm run build && npx typeorm-ts-node-commonjs migration:run -d src/config/data-source.ts",
     "typeorm:revert": "npm run build && npx typeorm-ts-node-commonjs migration:revert -d src/config/data-source.ts",
-    "migration:generate": "npm run build && npx typeorm-ts-node-commonjs migration:generate src/migrations/InitialMigration -d src/config/data-source.ts"
+    "migration:generate": "npm run build && npx typeorm-ts-node-commonjs migration:generate -d src/config/data-source.ts"
   },
   "dependencies": {
     "@apollo/server": "^4.10.4",
