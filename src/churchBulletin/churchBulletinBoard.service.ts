@@ -168,7 +168,7 @@ export class ChurchBulletinBoardService {
 
       const urlsToDelete = oldUrls.filter((url) => !newUrls.includes(url));
       // 비동기로 처리하여 사용자 응답 속도에 영향을 주지 않도록 함
-      Promise.all(urlsToDelete.map((url) => this.uploadsService.deleteS3File(url))).catch((e) =>
+      Promise.all(urlsToDelete.map((url) => this.uploadsService.deleteFile(url))).catch((e) =>
         console.error('파일 삭제 중 지연 오류:', e),
       );
 
@@ -212,7 +212,7 @@ export class ChurchBulletinBoardService {
       for (const board of boards) {
         const urlsToDelete = this.extractAllS3Urls(board);
         for (const url of urlsToDelete) {
-          await this.uploadsService.deleteS3File(url);
+          await this.uploadsService.deleteFile(url);
         }
       }
 

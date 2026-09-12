@@ -170,7 +170,7 @@ export class ChurchInformationBoardService {
 
       const urlsToDelete = oldUrls.filter((url) => !newUrls.includes(url));
 
-      Promise.all(urlsToDelete.map((url) => this.uploadsService.deleteS3File(url))).catch((e) =>
+      Promise.all(urlsToDelete.map((url) => this.uploadsService.deleteFile(url))).catch((e) =>
         console.error('파일 삭제 중 지연 오류:', e),
       );
 
@@ -214,7 +214,7 @@ export class ChurchInformationBoardService {
       for (const board of boards) {
         const urlsToDelete = this.extractAllS3Urls(board);
         for (const url of urlsToDelete) {
-          await this.uploadsService.deleteS3File(url);
+          await this.uploadsService.deleteFile(url);
         }
       }
 
