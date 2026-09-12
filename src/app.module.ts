@@ -15,7 +15,6 @@ import { ChurchAlbumBoardsModule } from './churchAlbum/churchAlbumBoard.module';
 import { ChurchInformationBoardsModule } from './churchInformation/churchInformationBoard.module';
 import { ChurchBulletinBoardModule } from './churchBulletin/churchBulletinBoard.module';
 import { MainPopupBoardsModule } from './MainPopup/mainPopupBoard.module';
-import { S3UploadsModule } from './uploads/s3uploads.module';
 import { UploadsModule } from './uploads/uploads.module';
 
 @Module({
@@ -42,10 +41,10 @@ import { UploadsModule } from './uploads/uploads.module';
         REDIS_PASSWORD: Joi.string().allow('').optional(),
 
         // AWS S3 ✅
-        AWS_REGION: Joi.string().required(),
-        AWS_BUCKET: Joi.string().required(),
-        AWS_ACCESS_KEY_ID: Joi.string().required(),
-        AWS_SECRET_ACCESS_KEY: Joi.string().required(),
+        AWS_REGION: Joi.string().optional(),
+        AWS_BUCKET: Joi.string().optional(),
+        AWS_ACCESS_KEY_ID: Joi.string().optional(),
+        AWS_SECRET_ACCESS_KEY: Joi.string().optional(),
       }),
     }),
     TypeOrmModule.forRootAsync({
@@ -91,8 +90,7 @@ import { UploadsModule } from './uploads/uploads.module';
       privateKey: process.env.PRIVATE_KEY,
       privateKeyExpiresIn: process.env.PRIVATE_KEY_EXPIRES_IN,
     }),
-
-    S3UploadsModule.forRootAsync({
+    /* S3UploadsModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({
         bucket: config.get('AWS_BUCKET'),
@@ -101,7 +99,7 @@ import { UploadsModule } from './uploads/uploads.module';
         secretAccessKey: config.get('AWS_SECRET_ACCESS_KEY'),
       }),
       inject: [ConfigService],
-    }),
+    }), */
     UploadsModule,
     UsersModule,
     AuthModule,
