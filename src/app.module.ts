@@ -40,6 +40,8 @@ import { UploadsModule } from './uploads/uploads.module';
         REDIS_PORT: Joi.number().optional(),
         REDIS_PASSWORD: Joi.string().allow('').optional(),
 
+        UPLOAD_PATH: Joi.string().optional(),
+
         // AWS S3 ✅
         AWS_REGION: Joi.string().optional(),
         AWS_BUCKET: Joi.string().optional(),

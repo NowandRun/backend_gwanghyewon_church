@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { BoardType } from './board-type.enum';
 import { extname, join } from 'path';
 import * as fs from 'fs';
@@ -18,7 +13,6 @@ export class UploadsService {
   private readonly MAX_TOTAL_STORAGE_BYTES = 2 * 1024 * 1024 * 1024;
 
   constructor(
-    @Inject('UPLOADS_OPTIONS')
     private readonly configService: ConfigService, // 주입
   ) {
     // 100% .env 파일에서만 경로를 가져오도록 설정
